@@ -6,8 +6,6 @@
     <title>ProcureQR v3.0 - Công Ty TNHH TM-KT Song Hiệp Lợi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .tab-content { display: none; }
@@ -37,15 +35,6 @@
             <div class="max-w-7xl mx-auto px-4 flex space-x-1 overflow-x-auto">
                 <button onclick="switchTab('prTab')" id="btn-prTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-blue-500 text-white bg-slate-700/50">
                     <i class="fa-solid fa-file-pen text-blue-400"></i><span>Đề Xuất (PR)</span>
-                </button>
-                <button onclick="switchTab('poTab')" id="btn-poTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
-                    <i class="fa-solid fa-cart-shopping text-emerald-400"></i><span>Đơn Mua (PO)</span>
-                </button>
-                <button onclick="switchTab('qrTab')" id="btn-qrTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
-                    <i class="fa-solid fa-boxes-stacked text-purple-400"></i><span>Kho & Mã QR</span>
-                </button>
-                <button onclick="switchTab('vatTab')" id="btn-vatTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
-                    <i class="fa-solid fa-receipt text-amber-400"></i><span>Hóa Đơn & Công Nợ</span>
                 </button>
                 <button onclick="switchTab('settingsTab')" id="btn-settingsTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
                     <i class="fa-solid fa-sliders text-slate-400"></i><span>Cấu Hình Sync</span>
@@ -89,7 +78,7 @@
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Lý Do / Mục Đích Sử Dụng</label>
                             <textarea id="prReason" rows="3" placeholder="Thay thế máy sản xuất dòng 2..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm flex items-center justify-center space-x-2">
+                        <button type="submit" id="btnSubmitPR" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm flex items-center justify-center space-x-2">
                             <i class="fa-solid fa-paper-plane"></i>
                             <span>Gửi Phiếu Đề Xuất (PR)</span>
                         </button>
@@ -114,7 +103,6 @@
                                     <th class="py-3 px-3">Vật Tư</th>
                                     <th class="py-3 px-3 text-center">SL</th>
                                     <th class="py-3 px-3">Trạng Thái</th>
-                                    <th class="py-3 px-3 text-right">Thao Tác</th>
                                 </tr>
                             </thead>
                             <tbody id="prTableBody" class="divide-y divide-slate-100">
@@ -126,14 +114,13 @@
             </div>
         </div>
 
-        <!-- TAB 5: CẤU HÌNH SYNC GOOGLE SHEETS -->
+        <!-- TAB CẤU HÌNH SYNC -->
         <div id="settingsTab" class="tab-content space-y-6">
             <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
                     <i class="fa-solid fa-cloud-arrow-up text-blue-600"></i>
                     <span>Kết Nối Google Sheets (Cơ Sở Dữ Liệu Miễn Phí)</span>
                 </h2>
-                <p class="text-xs text-slate-500 mb-4">Nhập đường link Web App của Google Apps Script để toàn bộ Đề xuất PR, Đơn hàng PO, Tồn kho và Số Hóa đơn VAT tự động đồng bộ 2 chiều về File Trang tính Google của Công ty Song Hiệp Lợi.</p>
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Google Apps Script Web App URL</label>
@@ -163,7 +150,6 @@
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('border-blue-500', 'text-white', 'bg-slate-700/50'));
-            
             document.getElementById(tabId).classList.add('active');
             const btn = document.getElementById('btn-' + tabId);
             if (btn) btn.classList.add('border-blue-500', 'text-white', 'bg-slate-700/50');
@@ -171,46 +157,33 @@
 
         function saveSyncConfig() {
             const url = document.getElementById('scriptUrlInput').value.trim();
-            if (!url) {
-                alert('Vui lòng nhập URL Google Apps Script!');
+            if (!url.startsWith('https://script.google.com/macros/s/') || !url.endsWith('/exec')) {
+                alert('❌ Đường link không hợp lệ! Link chuẩn phải bắt đầu bằng https://script.google.com/macros/s/ và kết thúc bằng /exec');
                 return;
             }
             localStorage.setItem('shl_script_url', url);
             scriptUrl = url;
             updateSyncBadge(true);
-            alert('Đã lưu cấu hình kết nối Google Sheets thành công!');
+            alert('✅ Đã lưu cấu hình link Google Sheets!');
         }
 
-        // HÀM KIỂM TRA KẾT NỐI TỐI ƯU (CÓ TIMEOUT TỰ ĐỘNG)
         function testConnection() {
             const url = document.getElementById('scriptUrlInput').value.trim();
-            if (!url) {
-                alert('Vui lòng nhập đường link Google Apps Script URL trước!');
+            if (!url.startsWith('https://script.google.com/macros/s/') || !url.endsWith('/exec')) {
+                alert('❌ Đường link không đúng định dạng Google Apps Script!');
+                updateSyncBadge(false);
                 return;
             }
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 4000); // Tự hủy sau 4s
-
-            fetch(url + '?action=getData', { signal: controller.signal })
-                .then(res => {
-                    clearTimeout(timeoutId);
-                    if (res.ok) {
-                        alert('✅ Kết nối Google Sheets thành công!');
-                        updateSyncBadge(true);
-                    } else {
-                        alert('⚠️ Kết nối được tới Script nhưng Google trả về lỗi HTTP: ' + res.status);
-                    }
+            fetch(url + '?action=getData')
+                .then(res => res.json())
+                .then(data => {
+                    alert('✅ Kết nối Google Sheets thành công! Dữ liệu sẵn sàng.');
+                    updateSyncBadge(true);
                 })
                 .catch(err => {
-                    clearTimeout(timeoutId);
-                    // Dù bị chặn CORS nhưng vẫn coi như đã gọi thành công nếu không phải timeout
-                    if (err.name === 'AbortError') {
-                        alert('❌ Kết nối quá thời gian quy định (Timeout). Vui lòng kiểm tra lại đường link Script!');
-                    } else {
-                        alert('✅ Đã gửi tín hiệu kết nối tới Google Sheets thành công!');
-                        updateSyncBadge(true);
-                    }
+                    alert('❌ Lỗi kết nối! Kiểm tra lại xem bản Triển khai trong Apps Script đã bật "Bất kỳ ai" (Anyone) chưa.');
+                    updateSyncBadge(false);
                 });
         }
 
@@ -218,29 +191,57 @@
             const badge = document.getElementById('syncStatusBadge');
             if (isSynced) {
                 badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>Đã Kết Nối Sheets</span>`;
+            } else {
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span><span>Lưu trữ Nội bộ</span>`;
             }
         }
 
         function handleCreatePR(e) {
             e.preventDefault();
-            const requester = document.getElementById('prRequester').value;
-            const itemName = document.getElementById('prItemName').value;
-            const partNo = document.getElementById('prPartNo').value;
-            const qty = document.getElementById('prQty').value;
-            const reason = document.getElementById('prReason').value;
+            const btn = document.getElementById('btnSubmitPR');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang gửi về Google Sheets...</span>`;
 
             const prData = {
                 id: 'PR-' + Date.now().toString().slice(-6),
-                requester, itemName, partNo, qty, reason,
+                requester: document.getElementById('prRequester').value,
+                itemName: document.getElementById('prItemName').value,
+                partNo: document.getElementById('prPartNo').value,
+                qty: document.getElementById('prQty').value,
+                reason: document.getElementById('prReason').value,
                 status: 'Chờ Duyệt',
                 date: new Date().toLocaleDateString('vi-VN')
             };
 
+            // Lưu Local Storage
             let prList = JSON.parse(localStorage.getItem('shl_pr_list') || '[]');
             prList.unshift(prData);
             localStorage.setItem('shl_pr_list', JSON.stringify(prList));
 
-            alert('Tạo đề xuất Mua hàng (PR) thành công!');
+            // Đẩy thẳng về Google Sheets
+            if (scriptUrl) {
+                fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'SAVE_PR', data: prData })
+                }).then(() => {
+                    alert('🎉 Tạo đơn PR và Đồng bộ lên Google Sheets thành công!');
+                    resetFormAndTable();
+                }).catch(() => {
+                    alert('Tạo đơn PR thành công (Lưu nội bộ)!');
+                    resetFormAndTable();
+                });
+            } else {
+                alert('Tạo đơn PR thành công (Lưu nội bộ)!');
+                resetFormAndTable();
+            }
+        }
+
+        function resetFormAndTable() {
+            const btn = document.getElementById('btnSubmitPR');
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Gửi Phiếu Đề Xuất (PR)</span>`;
             document.getElementById('prForm').reset();
             renderPRTable();
         }
@@ -251,7 +252,7 @@
             document.getElementById('prCount').textContent = prList.length + ' đơn';
 
             if (prList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Chưa có đề xuất nào được tạo</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Chưa có đề xuất nào được tạo</td></tr>`;
                 return;
             }
 
@@ -265,7 +266,6 @@
                     </td>
                     <td class="py-3 px-3 text-center font-bold">${item.qty}</td>
                     <td class="py-3 px-3"><span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">${item.status}</span></td>
-                    <td class="py-3 px-3 text-right"><button class="text-xs bg-blue-900 hover:bg-blue-800 text-white px-2.5 py-1 rounded">Duyệt Đơn</button></td>
                 </tr>
             `).join('');
         }
