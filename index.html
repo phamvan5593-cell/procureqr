@@ -16,12 +16,14 @@
 
     <!-- Header -->
     <header class="bg-slate-900 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="bg-blue-600 font-bold px-3 py-1.5 rounded-lg text-xl tracking-wider">SHL</div>
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <!-- Logo SHL màu chuẩn lấy từ Google Drive -->
+                <img src="https://lh3.googleusercontent.com/d/16ASDaeXMxyZn7qkDuKkdo-bmBR8BAGjP" alt="Logo SHL" class="h-12 w-auto object-contain bg-white p-1 rounded">
                 <div>
-                    <h1 class="text-xl font-bold leading-tight">ProcureQR <span class="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full font-normal">v3.0</span></h1>
-                    <p class="text-xs text-slate-400">CÔNG TY TNHH TM-KT SONG HIỆP LỢI</p>
+                    <!-- Chữ Công Ty Song Hiệp Lợi to ở trên, ProcureQR v3.0 nằm bên dưới -->
+                    <h1 class="text-base font-bold leading-tight text-blue-300 tracking-wide uppercase">CÔNG TY TNHH TM-KT SONG HIỆP LỢI</h1>
+                    <p class="text-xs text-slate-300 font-medium">ProcureQR <span class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full">v3.0</span> - Quản Lý Đề Xuất & Tồn Kho</p>
                 </div>
             </div>
             <div class="flex items-center space-x-3">
@@ -29,8 +31,9 @@
                     <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                     <span>Đã Kết Nối Sheets</span>
                 </div>
-                <button id="adminLoginBtn" onclick="toggleAdminLogin()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 flex items-center space-x-1.5">
-                    <i class="fa-solid fa-lock"></i><span id="adminBtnText">Đăng nhập Admin</span>
+                <!-- Nút phân quyền Quản trị / TPKT -->
+                <button id="adminLoginBtn" onclick="toggleAdminLogin()" class="bg-blue-800 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg border border-blue-600 flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-user-shield"></i><span id="adminBtnText">Đăng nhập TPKT / Admin</span>
                 </button>
             </div>
         </div>
@@ -178,9 +181,8 @@
     </main>
 
     <script>
-        // LINK MẶC ĐỊNH SẮN TRONG CODE NGUỒN
         const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzubDDbw3ezmBLpqAkpMzSmvdZKztaWIxXXBetZ_2eNJWPbGZIO0LEG6SEiYpHAHWegyw/exec";
-        const ADMIN_PASS = "123456"; 
+        const ADMIN_PASS = "123456"; // Mật khẩu duyệt của TPKT / Admin
         
         let isAdmin = false;
         let scriptUrl = localStorage.getItem('shl_script_url') || DEFAULT_SCRIPT_URL;
@@ -198,20 +200,22 @@
         function toggleAdminLogin() {
             if (isAdmin) {
                 isAdmin = false;
-                document.getElementById('adminBtnText').textContent = "Đăng nhập Admin";
+                document.getElementById('adminBtnText').textContent = "Đăng nhập TPKT / Admin";
                 document.getElementById('btn-settingsTab').classList.add('hidden');
                 switchTab('prTab');
-                alert('Đã thoát quyền Admin!');
+                renderPRTable();
+                alert('Đã thoát quyền Quản trị!');
             } else {
-                const pass = prompt('Nhập mật khẩu Quản trị (Admin):');
+                const pass = prompt('Nhập mật khẩu xác thực TPKT / Admin:');
                 if (pass === ADMIN_PASS) {
                     isAdmin = true;
-                    document.getElementById('adminBtnText').textContent = "Thoát Admin";
+                    document.getElementById('adminBtnText').textContent = "Thoát Quyền TPKT";
                     document.getElementById('btn-settingsTab').classList.remove('hidden');
                     document.getElementById('btn-settingsTab').classList.add('flex');
-                    alert('Đăng nhập Quản trị thành công!');
+                    renderPRTable();
+                    alert('Đăng nhập xác thực TPKT thành công! Quyền duyệt đơn đã được mở.');
                 } else if (pass !== null) {
-                    alert('❌ Mật khẩu Quản trị không chính xác!');
+                    alert('❌ Mật khẩu xác thực không chính xác!');
                 }
             }
         }
@@ -236,26 +240,26 @@
                 scriptUrl = inputUrl;
                 alert('✅ Đã cập nhật link kết nối mới thành công!');
             } else {
-                alert('❌ Đường link không hợp lệ! Link chuẩn phải bắt đầu bằng https://script.google.com/macros/s/ và kết thúc bằng /exec');
+                alert('❌ Đường link không hợp lệ!');
             }
         }
 
         function resetDefaultUrl() {
             if (!isAdmin) {
-                alert('Chỉ Admin mới có quyền khôi phục cấu hình!');
+                alert('Chỉ Admin mới có quyền khôi phục!');
                 return;
             }
             localStorage.removeItem('shl_script_url');
             scriptUrl = DEFAULT_SCRIPT_URL;
             document.getElementById('scriptUrlInput').value = DEFAULT_SCRIPT_URL;
-            alert('🔄 Đã khôi phục lại đường link mặc định ban đầu!');
+            alert('🔄 Đã khôi phục đường link mặc định!');
         }
 
         function testConnection() {
             fetch(scriptUrl + '?action=getData')
                 .then(res => res.json())
                 .then(data => {
-                    alert('✅ Kết nối Google Sheets thành công! Dữ liệu hoạt động bình thường.');
+                    alert('✅ Kết nối Google Sheets thành công!');
                 })
                 .catch(err => {
                     alert('❌ Lỗi kết nối tới Google Sheets!');
@@ -279,39 +283,50 @@
                 date: new Date().toLocaleDateString('vi-VN')
             };
 
-            // Lưu Local Storage
             let prList = JSON.parse(localStorage.getItem('shl_pr_list') || '[]');
             prList.unshift(prData);
             localStorage.setItem('shl_pr_list', JSON.stringify(prList));
 
-            // Đẩy dữ liệu về Google Sheets
             fetch(scriptUrl, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ type: 'SAVE_PR', data: prData })
             }).then(() => {
-                alert('🎉 Tạo đơn PR và Đồng bộ về Google Sheets thành công!');
+                alert('🎉 Tạo đơn PR thành công!');
                 resetFormAndTable();
             }).catch(() => {
-                alert('Tạo đơn PR thành công (Lưu nội bộ)!');
+                alert('Tạo đơn PR thành công!');
                 resetFormAndTable();
             });
         }
 
-        function deletePR(prId) {
-            const pass = prompt('Nhập mật khẩu Quản trị để XÓA đơn ' + prId + ':');
-            if (pass !== ADMIN_PASS) {
-                if (pass !== null) alert('❌ Sai mật khẩu Quản trị! Không thể xóa.');
+        function approvePR(prId) {
+            if (!isAdmin) {
+                alert('🔒 Chỉ Trưởng phòng Kỹ thuật (TPKT) mới có quyền duyệt đơn này!');
                 return;
             }
+            let prList = JSON.parse(localStorage.getItem('shl_pr_list') || '[]');
+            let item = prList.find(i => i.id === prId);
+            if (item) {
+                item.status = 'Đã Duyệt';
+                localStorage.setItem('shl_pr_list', JSON.stringify(prList));
+                alert('✅ TPKT đã duyệt thành công đơn ' + prId + '!');
+                renderPRTable();
+            }
+        }
 
-            // Xóa ở Local Storage
+        function deletePR(prId) {
+            if (!isAdmin) {
+                alert('🔒 Chỉ TPKT / Admin mới có quyền XÓA đơn này!');
+                return;
+            }
+            if (!confirm('Anh có chắc chắn muốn xóa đơn đề xuất ' + prId + ' không?')) return;
+
             let prList = JSON.parse(localStorage.getItem('shl_pr_list') || '[]');
             prList = prList.filter(item => item.id !== prId);
             localStorage.setItem('shl_pr_list', JSON.stringify(prList));
 
-            // Gửi lệnh xóa về Google Sheets
             fetch(scriptUrl, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -351,11 +366,24 @@
                         <div class="text-xs text-slate-400">${item.partNo ? 'Part: ' + item.partNo : ''}</div>
                     </td>
                     <td class="py-3 px-3 text-center font-bold">${item.qty}</td>
-                    <td class="py-3 px-3"><span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">${item.status}</span></td>
-                    <td class="py-3 px-3 text-right">
-                        <button onclick="deletePR('${item.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded font-medium border border-red-200">
-                            <i class="fa-solid fa-trash-can mr-1"></i>Xóa
-                        </button>
+                    <td class="py-3 px-3">
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${item.status === 'Đã Duyệt' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                            ${item.status}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 text-right space-x-1">
+                        ${isAdmin ? `
+                            ${item.status !== 'Đã Duyệt' ? `
+                                <button onclick="approvePR('${item.id}')" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded font-medium">
+                                    Duyệt Đơn
+                                </button>
+                            ` : ''}
+                            <button onclick="deletePR('${item.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded font-medium border border-red-200">
+                                Xóa
+                            </button>
+                        ` : `
+                            <span class="text-xs text-slate-400 italic">Cần quyền TPKT</span>
+                        `}
                     </td>
                 </tr>
             `).join('');
