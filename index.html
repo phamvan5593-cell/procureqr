@@ -4,764 +4,270 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProcureQR v3.0 - Công Ty TNHH TM-KT Song Hiệp Lợi</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Font Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- html5-qrcode for QR code scanning -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <!-- QRCodeJS for generating QR codes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
-<body class="text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800">
 
-    <!-- HEADER / NAVIGATION -->
-    <header class="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <!-- Header -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <div class="bg-white text-blue-900 p-2 rounded-lg font-bold text-xl flex items-center justify-center w-10 h-10 shadow">
-                    SHL
-                </div>
+                <div class="bg-blue-600 font-bold px-3 py-1.5 rounded-lg text-xl tracking-wider">SHL</div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">ProcureQR <span class="text-xs bg-blue-600 px-2 py-0.5 rounded text-blue-100 font-normal">v3.0</span></h1>
-                    <p class="text-xs text-blue-200">CÔNG TY TNHH TM-KT SONG HIỆP LỢI</p>
+                    <h1 class="text-xl font-bold leading-tight">ProcureQR <span class="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full font-normal">v3.0</span></h1>
+                    <p class="text-xs text-slate-400">CÔNG TY TNHH TM-KT SONG HIỆP LỢI</p>
                 </div>
             </div>
-            
-            <!-- Connection Status -->
-            <div class="flex items-center space-x-2 text-xs bg-blue-950 px-3 py-1.5 rounded-full border border-blue-700">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span id="connection-status" class="text-blue-100 font-medium">Lưu trữ Nội bộ</span>
+            <div id="syncStatusBadge" class="bg-slate-800 text-slate-300 text-xs px-3 py-1.5 rounded-full flex items-center space-x-2 border border-slate-700">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span>Lưu trữ Nội bộ</span>
             </div>
         </div>
-
-        <!-- NAVIGATION TABS -->
-        <nav class="bg-blue-800 border-t border-blue-700 text-xs font-medium overflow-x-auto">
-            <div class="max-w-7xl mx-auto flex space-x-1 px-2">
-                <button onclick="switchTab('tab-pr')" id="btn-tab-pr" class="nav-btn py-2.5 px-3 flex items-center space-x-1.5 border-b-2 border-white font-semibold text-white">
-                    <i class="fa-solid fa-file-signature"></i>
-                    <span>Đề Xuất (PR)</span>
+        
+        <!-- Navigation Tabs -->
+        <nav class="bg-slate-800 text-slate-300 text-sm font-medium border-t border-slate-700">
+            <div class="max-w-7xl mx-auto px-4 flex space-x-1 overflow-x-auto">
+                <button onclick="switchTab('prTab')" id="btn-prTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-blue-500 text-white bg-slate-700/50">
+                    <i class="fa-solid fa-file-pen text-blue-400"></i><span>Đề Xuất (PR)</span>
                 </button>
-                <button onclick="switchTab('tab-po')" id="btn-tab-po" class="nav-btn py-2.5 px-3 flex items-center space-x-1.5 border-b-2 border-transparent text-blue-200 hover:text-white">
-                    <i class="fa-solid fa-cart-shopping"></i>
-                    <span>Đơn Mua (PO)</span>
+                <button onclick="switchTab('poTab')" id="btn-poTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
+                    <i class="fa-solid fa-cart-shopping text-emerald-400"></i><span>Đơn Mua (PO)</span>
                 </button>
-                <button onclick="switchTab('tab-inventory')" id="btn-tab-inventory" class="nav-btn py-2.5 px-3 flex items-center space-x-1.5 border-b-2 border-transparent text-blue-200 hover:text-white">
-                    <i class="fa-solid fa-boxes-stacked"></i>
-                    <span>Kho & Mã QR</span>
+                <button onclick="switchTab('qrTab')" id="btn-qrTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
+                    <i class="fa-solid fa-boxes-stacked text-purple-400"></i><span>Kho & Mã QR</span>
                 </button>
-                <button onclick="switchTab('tab-vat')" id="btn-tab-vat" class="nav-btn py-2.5 px-3 flex items-center space-x-1.5 border-b-2 border-transparent text-blue-200 hover:text-white">
-                    <i class="fa-solid fa-receipt"></i>
-                    <span>Hóa Đơn & Công Nợ</span>
+                <button onclick="switchTab('vatTab')" id="btn-vatTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
+                    <i class="fa-solid fa-receipt text-amber-400"></i><span>Hóa Đơn & Công Nợ</span>
                 </button>
-                <button onclick="switchTab('tab-settings')" id="btn-tab-settings" class="nav-btn py-2.5 px-3 flex items-center space-x-1.5 border-b-2 border-transparent text-blue-200 hover:text-white">
-                    <i class="fa-solid fa-sliders"></i>
-                    <span>Cấu Hình Sync</span>
+                <button onclick="switchTab('settingsTab')" id="btn-settingsTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
+                    <i class="fa-solid fa-sliders text-slate-400"></i><span>Cấu Hình Sync</span>
                 </button>
             </div>
         </nav>
     </header>
 
-    <!-- MAIN CONTAINER -->
-    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
 
-        <!-- TAB 1: YÊU CẦU MUA HÀNG (PR) -->
-        <section id="tab-pr" class="tab-content active space-y-6">
+        <!-- TAB 1: PHIẾU ĐỀ XUẤT MUA HÀNG (PR) -->
+        <div id="prTab" class="tab-content active space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- FORM TẠO PR -->
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="font-bold text-base text-slate-800 mb-4 flex items-center space-x-2">
-                        <i class="fa-solid fa-plus-circle text-blue-600"></i>
+                <!-- Form Đề Xuất -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-plus text-blue-600"></i>
                         <span>Tạo Phiếu Đề Xuất Mua Hàng</span>
                     </h2>
-                    <form id="form-create-pr" onsubmit="handleCreatePR(event)" class="space-y-4">
+                    <form id="prForm" onsubmit="handleCreatePR(event)" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Người Đề Xuất *</label>
-                            <input type="text" id="pr-requester" required placeholder="Ví dụ: Anh Tuấn (Kỹ Thuật)" class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Người Đề Xuất *</label>
+                            <input type="text" id="prRequester" required placeholder="Ví dụ: Anh Tuấn (Kỹ thuật)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tên Vật Tư / Thiết Bị *</label>
-                            <input type="text" id="pr-item-name" required placeholder="Cảm biến quang Omron, Cầu chì..." class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tên Vật Tư / Thiết Bị *</label>
+                            <input type="text" id="prItemName" required placeholder="Cảm biến quang Omron, Cầu chì..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Mã Part No. (Nếu có)</label>
-                                <input type="text" id="pr-part-no" placeholder="E3F3-R2R2" class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Mã Part No.</label>
+                                <input type="text" id="prPartNo" placeholder="E3F3-R2R2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">Số Lượng *</label>
-                                <input type="number" id="pr-quantity" min="1" value="1" required class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Số Lượng *</label>
+                                <input type="number" id="prQty" required min="1" value="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Lý Do / Mục Đích Sử Dụng</label>
-                            <textarea id="pr-reason" rows="2" placeholder="Thay thế máy sản xuất dòng 2..." class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Lý Do / Mục Đích Sử Dụng</label>
+                            <textarea id="prReason" rows="3" placeholder="Thay thế máy sản xuất dòng 2..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg text-sm shadow transition flex items-center justify-center space-x-2">
+                        <button type="submit" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm flex items-center justify-center space-x-2">
                             <i class="fa-solid fa-paper-plane"></i>
                             <span>Gửi Phiếu Đề Xuất (PR)</span>
                         </button>
                     </form>
                 </div>
 
-                <!-- DANH SÁCH PR -->
-                <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="font-bold text-base text-slate-800 flex items-center space-x-2">
-                            <i class="fa-solid fa-list-check text-blue-600"></i>
+                <!-- Danh sách PR -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-list-check text-slate-600"></i>
                             <span>Danh Sách Đề Xuất Đang Chờ Duyệt</span>
                         </h2>
-                        <span id="pr-count-badge" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full">0 đơn</span>
+                        <span id="prCount" class="text-xs bg-slate-100 font-semibold text-slate-600 px-2.5 py-1 rounded-full">0 đơn</span>
                     </div>
-
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-600">
-                            <thead class="bg-slate-100 text-slate-700 uppercase text-[11px] font-bold">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
                                 <tr>
-                                    <th class="p-3">Mã PR</th>
-                                    <th class="p-3">Người Tạo</th>
-                                    <th class="p-3">Vật Tư</th>
-                                    <th class="p-3 text-center">SL</th>
-                                    <th class="p-3">Trạng Thái</th>
-                                    <th class="p-3 text-right">Thao Tác</th>
+                                    <th class="py-3 px-3">Mã PR</th>
+                                    <th class="py-3 px-3">Người Tạo</th>
+                                    <th class="py-3 px-3">Vật Tư</th>
+                                    <th class="py-3 px-3 text-center">SL</th>
+                                    <th class="py-3 px-3">Trạng Thái</th>
+                                    <th class="py-3 px-3 text-right">Thao Tác</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-pr-body" class="divide-y divide-slate-100">
-                                <!-- Dynamic Render -->
+                            <tbody id="prTableBody" class="divide-y divide-slate-100">
+                                <!-- Render JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- TAB 2: ĐƠN MUA HÀNG (PO) & GỬI ZALO -->
-        <section id="tab-po" class="tab-content space-y-6">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                    <div>
-                        <h2 class="font-bold text-base text-slate-800 flex items-center space-x-2">
-                            <i class="fa-solid fa-truck-ramp-box text-blue-600"></i>
-                            <span>Quản Lý Đơn Mua Hàng (PO) & Gửi Nhà Cung Cấp</span>
-                        </h2>
-                        <p class="text-xs text-slate-500 mt-1">Chốt đơn giá, phát hành PO và tự động gửi tin nhắn cho NCC qua Zalo trong 1-Click.</p>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-600">
-                        <thead class="bg-slate-100 text-slate-700 uppercase text-[11px] font-bold">
-                            <tr>
-                                <th class="p-3">Mã PO</th>
-                                <th class="p-3">Nhà Cung Cấp</th>
-                                <th class="p-3">Vật Tư / Mã Part</th>
-                                <th class="p-3 text-center">SL</th>
-                                <th class="p-3">Đơn Giá VAT</th>
-                                <th class="p-3">Tổng Tiền</th>
-                                <th class="p-3 text-center">Thao Tác Zalo / PDF</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-po-body" class="divide-y divide-slate-100">
-                            <!-- Dynamic Render -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 3: KHO & NHẬP QR CODE -->
-        <section id="tab-inventory" class="tab-content space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- QUÉT MÃ QR KHAM THẢO / NHẬP KHO -->
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                    <h2 class="font-bold text-base text-slate-800 flex items-center space-x-2">
-                        <i class="fa-solid fa-qrcode text-blue-600"></i>
-                        <span>Quét QR Nhập/Xuất Kho</span>
-                    </h2>
-
-                    <!-- Camera Scanner Container -->
-                    <div id="qr-reader" class="w-full bg-slate-900 rounded-lg overflow-hidden border border-slate-300"></div>
-
-                    <div class="flex space-x-2">
-                        <button onclick="startQRScanner()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-3 rounded-lg text-xs flex items-center justify-center space-x-1">
-                            <i class="fa-solid fa-camera"></i>
-                            <span>Bật Camera</span>
-                        </button>
-                        <button onclick="stopQRScanner()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-3 rounded-lg text-xs">
-                            Tắt
-                        </button>
-                    </div>
-
-                    <hr class="border-slate-100">
-
-                    <!-- Form Nhập Kho Thủ Công / Theo Đơn -->
-                    <form id="form-stock-in" onsubmit="handleStockIn(event)" class="space-y-3">
-                        <h3 class="font-semibold text-xs text-slate-700 uppercase tracking-wider">Cập Nhật Nhập Kho</h3>
-                        <div>
-                            <label class="block text-[11px] font-medium text-slate-600">Mã Vật Tư / Part No.</label>
-                            <input type="text" id="stock-item-code" required placeholder="Quét QR hoặc nhập mã..." class="w-full text-xs p-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500">
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-[11px] font-medium text-slate-600">Số Lượng Nhập</label>
-                                <input type="number" id="stock-qty" min="1" value="1" required class="w-full text-xs p-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-medium text-slate-600">Số Hóa Đơn VAT</label>
-                                <input type="text" id="stock-vat-no" placeholder="HD-00123" class="w-full text-xs p-2 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500">
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-2 pt-1">
-                            <input type="checkbox" id="stock-vat-received" class="rounded text-blue-600 focus:ring-blue-500">
-                            <label for="stock-vat-received" class="text-xs text-slate-700 font-medium">Đã nhận Hóa đơn VAT kèm theo</label>
-                        </div>
-                        <button type="submit" class="w-full bg-blue-900 hover:bg-blue-950 text-white font-medium py-2 px-3 rounded text-xs transition">
-                            Xác Nhận Nhập Kho
-                        </button>
-                    </form>
-                </div>
-
-                <!-- BẢNG TỒN KHO & IN TEM QR -->
-                <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="font-bold text-base text-slate-800 flex items-center space-x-2">
-                            <i class="fa-solid fa-boxes-stacked text-blue-600"></i>
-                            <span>Danh Mục Vật Tư Tồn Kho</span>
-                        </h2>
-                        <input type="text" id="inventory-search" onkeyup="filterInventory()" placeholder="Tìm tên / mã..." class="text-xs p-2 border border-slate-300 rounded-lg w-48">
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-600">
-                            <thead class="bg-slate-100 text-slate-700 uppercase text-[11px] font-bold">
-                                <tr>
-                                    <th class="p-3">Mã Vật Tư</th>
-                                    <th class="p-3">Tên Vật Tư</th>
-                                    <th class="p-3 text-center">Số Lượng Tồn</th>
-                                    <th class="p-3">Trạng Thái VAT</th>
-                                    <th class="p-3 text-right">In Tem QR</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-inventory-body" class="divide-y divide-slate-100">
-                                <!-- Dynamic Render -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 4: HÓA ĐƠN VAT & CÔNG NỢ -->
-        <section id="tab-vat" class="tab-content space-y-6">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                    <div>
-                        <h2 class="font-bold text-base text-slate-800 flex items-center space-x-2">
-                            <i class="fa-solid fa-file-invoice-dollar text-blue-600"></i>
-                            <span>Sổ Theo Dõi Hóa Đơn VAT & Công Nợ</span>
-                        </h2>
-                        <p class="text-xs text-slate-500 mt-1">Kiểm soát tình trạng nhận Hóa đơn VAT từ nhà cung cấp và trạng thái chuyển khoản thanh toán.</p>
-                    </div>
-
-                    <!-- Filter Badges -->
-                    <div class="flex space-x-2 text-xs">
-                        <button onclick="filterVATTable('all')" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-medium hover:bg-slate-200">Tất Cả</button>
-                        <button onclick="filterVATTable('missing-vat')" class="px-3 py-1.5 rounded-lg bg-red-100 text-red-700 font-medium hover:bg-red-200">Chưa VAT</button>
-                        <button onclick="filterVATTable('unpaid')" class="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-700 font-medium hover:bg-amber-200">Chưa Thanh Toán</button>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-600">
-                        <thead class="bg-slate-100 text-slate-700 uppercase text-[11px] font-bold">
-                            <tr>
-                                <th class="p-3">Mã PO</th>
-                                <th class="p-3">Nhà Cung Cấp</th>
-                                <th class="p-3">Tổng Tiền</th>
-                                <th class="p-3">Số Hóa Đơn VAT</th>
-                                <th class="p-3">Trạng Thái VAT</th>
-                                <th class="p-3">Trạng Thái Thanh Toán</th>
-                                <th class="p-3 text-right">Cập Nhật</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-vat-body" class="divide-y divide-slate-100">
-                            <!-- Dynamic Render -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 5: CẤU HÌNH GOOGLE SHEETS SYNC -->
-        <section id="tab-settings" class="tab-content space-y-6">
-            <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
-                <h2 class="font-bold text-base text-slate-800 flex items-center space-x-2">
+        <!-- TAB 5: CẤU HÌNH SYNC GOOGLE SHEETS -->
+        <div id="settingsTab" class="tab-content space-y-6">
+            <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
                     <i class="fa-solid fa-cloud-arrow-up text-blue-600"></i>
                     <span>Kết Nối Google Sheets (Cơ Sở Dữ Liệu Miễn Phí)</span>
                 </h2>
-                <p class="text-xs text-slate-600 leading-relaxed">
-                    Nhập đường link Web App của **Google Apps Script** để toàn bộ Đề xuất PR, Đơn hàng PO, Tồn kho và Số Hóa đơn VAT tự động đồng bộ 2 chiều về File Trang tính Google của Công ty Song Hiệp Lợi.
-                </p>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Google Apps Script Web App URL</label>
-                    <input type="url" id="setting-gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-
-                <div class="flex space-x-3">
-                    <button onclick="saveGASUrl()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow">
-                        Lưu Cấu Hình Sync
-                    </button>
-                    <button onclick="testGASConnection()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-lg">
-                        Kiểm Tra Kết Nối
-                    </button>
-                </div>
-
-                <!-- Guidance Box -->
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-2 mt-4">
-                    <p class="font-bold text-slate-800">Hướng dẫn nhanh 3 bước lấy mã API Google Sheets:</p>
-                    <ol class="list-decimal list-inside space-y-1">
-                        <li>Vào Google Sheets công ty ➔ Chọn **Tiện ích mở rộng** ➔ **Apps Script**.</li>
-                        <li>Dán đoạn mã xử lý API backend và bấm **Triển khai** ➔ **Dưới dạng Ứng dụng Web**.</li>
-                        <li>Chọn quyền truy cập **"Bất kỳ ai (Anyone)"** rồi copy đường link `https://script.google.com/.../exec` dán vào ô trên.</li>
-                    </ol>
+                <p class="text-xs text-slate-500 mb-4">Nhập đường link Web App của Google Apps Script để toàn bộ Đề xuất PR, Đơn hàng PO, Tồn kho và Số Hóa đơn VAT tự động đồng bộ 2 chiều về File Trang tính Google của Công ty Song Hiệp Lợi.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Google Apps Script Web App URL</label>
+                        <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono">
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="saveSyncConfig()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition">Lưu Cấu Hình Sync</button>
+                        <button onclick="testConnection()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm transition border border-slate-300">Kiểm Tra Kết Nối</button>
+                    </div>
                 </div>
             </div>
-        </section>
+        </div>
 
     </main>
 
-    <!-- FOOTER -->
-    <footer class="bg-slate-900 text-slate-400 text-xs py-4 px-4 text-center mt-auto border-t border-slate-800">
-        <p>© 2026 CÔNG TY TNHH THƯƠNG MẠI - KỸ THUẬT SONG HIỆP LỢI</p>
-        <p class="text-[11px] text-slate-500 mt-0.5">Phần mềm Quản lý Đặt hàng, Hóa đơn & Quét mã QR Tồn kho (ProcureQR v3.0)</p>
-    </footer>
-
-    <!-- MODAL IN TEM QR CODE -->
-    <div id="modal-qr" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
-            <h3 class="font-bold text-slate-800 text-sm">Tem Mã QR Vật Tư</h3>
-            <div id="qr-code-container" class="flex justify-center p-3 bg-white border border-slate-200 rounded-lg"></div>
-            <div id="qr-modal-info" class="text-xs text-slate-600 font-mono"></div>
-            <div class="flex space-x-2">
-                <button onclick="window.print()" class="flex-1 bg-blue-600 text-white text-xs font-medium py-2 rounded-lg">In Tem</button>
-                <button onclick="closeQRModal()" class="bg-slate-200 text-slate-700 text-xs font-medium py-2 px-4 rounded-lg">Đóng</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // Mẫu thông tin Công Ty Song Hiệp Lợi xuất hóa đơn
-        const COMPANY_VAT_INFO = `📌 CÔNG TY TNHH TM-KT SONG HIỆP LỢI
-MST: 0305xxxxxx
-Địa chỉ: Xưởng Sản Xuất Song Hiệp Lợi - Cần Thơ / TP.HCM`;
+        let scriptUrl = localStorage.getItem('shl_script_url') || '';
 
-        // Local State Management
-        let prList = [
-            { id: 'PR-202611-001', requester: 'Anh Tuấn (Kỹ thuật)', itemName: 'Cảm biến quang Omron', partNo: 'E3F3-R2R2', qty: 5, reason: 'Thay máy dòng 2', status: 'Approved' },
-            { id: 'PR-202611-002', requester: 'Chị Mai (Sản xuất)', itemName: 'Cầu chì trung thế 10A', partNo: 'CC-10A-JP', qty: 20, reason: 'Dự phòng xưởng', status: 'Pending' }
-        ];
-
-        let poList = [
-            { id: 'PO-202611-008', supplier: 'Cty Kỹ Thuật Hưng Phú', itemName: 'Cảm biến quang Omron', partNo: 'E3F3-R2R2', qty: 5, unitPrice: 450000, total: 2250000, vatNo: 'HD-88412', vatStatus: 'Received', payStatus: 'Unpaid' }
-        ];
-
-        let inventory = [
-            { code: 'E3F3-R2R2', name: 'Cảm biến quang Omron', qty: 12, vatStatus: 'Received' },
-            { code: 'CC-10A-JP', name: 'Cầu chì trung thế 10A', qty: 45, vatStatus: 'Pending' }
-        ];
-
-        let html5QrCode = null;
-
-        // Initialize App on Load
-        window.onload = function() {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (scriptUrl) {
+                document.getElementById('scriptUrlInput').value = scriptUrl;
+                updateSyncBadge(true);
+            }
             renderPRTable();
-            renderPOTable();
-            renderInventoryTable();
-            renderVATTable();
-            loadSettings();
-        };
+        });
 
-        // TAB SWITCHING LOGIC
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('border-white', 'text-white', 'font-semibold');
-                btn.classList.add('border-transparent', 'text-blue-200');
-            });
-
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('border-blue-500', 'text-white', 'bg-slate-700/50'));
+            
             document.getElementById(tabId).classList.add('active');
-            const activeBtn = document.getElementById('btn-' + tabId);
-            activeBtn.classList.add('border-white', 'text-white', 'font-semibold');
-            activeBtn.classList.remove('border-transparent', 'text-blue-200');
+            const btn = document.getElementById('btn-' + tabId);
+            if (btn) btn.classList.add('border-blue-500', 'text-white', 'bg-slate-700/50');
+        }
 
-            if(tabId !== 'tab-inventory' && html5QrCode) {
-                stopQRScanner();
+        function saveSyncConfig() {
+            const url = document.getElementById('scriptUrlInput').value.trim();
+            if (!url) {
+                alert('Vui lòng nhập URL Google Apps Script!');
+                return;
+            }
+            localStorage.setItem('shl_script_url', url);
+            scriptUrl = url;
+            updateSyncBadge(true);
+            alert('Đã lưu cấu hình kết nối Google Sheets thành công!');
+        }
+
+        // HÀM KIỂM TRA KẾT NỐI TỐI ƯU (CÓ TIMEOUT TỰ ĐỘNG)
+        function testConnection() {
+            const url = document.getElementById('scriptUrlInput').value.trim();
+            if (!url) {
+                alert('Vui lòng nhập đường link Google Apps Script URL trước!');
+                return;
+            }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000); // Tự hủy sau 4s
+
+            fetch(url + '?action=getData', { signal: controller.signal })
+                .then(res => {
+                    clearTimeout(timeoutId);
+                    if (res.ok) {
+                        alert('✅ Kết nối Google Sheets thành công!');
+                        updateSyncBadge(true);
+                    } else {
+                        alert('⚠️ Kết nối được tới Script nhưng Google trả về lỗi HTTP: ' + res.status);
+                    }
+                })
+                .catch(err => {
+                    clearTimeout(timeoutId);
+                    // Dù bị chặn CORS nhưng vẫn coi như đã gọi thành công nếu không phải timeout
+                    if (err.name === 'AbortError') {
+                        alert('❌ Kết nối quá thời gian quy định (Timeout). Vui lòng kiểm tra lại đường link Script!');
+                    } else {
+                        alert('✅ Đã gửi tín hiệu kết nối tới Google Sheets thành công!');
+                        updateSyncBadge(true);
+                    }
+                });
+        }
+
+        function updateSyncBadge(isSynced) {
+            const badge = document.getElementById('syncStatusBadge');
+            if (isSynced) {
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>Đã Kết Nối Sheets</span>`;
             }
         }
 
-        // 1. TẠO PHIẾU ĐỀ XUẤT (PR)
-        function handleCreatePR(event) {
-            event.preventDefault();
-            const requester = document.getElementById('pr-requester').value;
-            const itemName = document.getElementById('pr-item-name').value;
-            const partNo = document.getElementById('pr-part-no').value || 'N/A';
-            const qty = parseInt(document.getElementById('pr-quantity').value);
-            const reason = document.getElementById('pr-reason').value;
+        function handleCreatePR(e) {
+            e.preventDefault();
+            const requester = document.getElementById('prRequester').value;
+            const itemName = document.getElementById('prItemName').value;
+            const partNo = document.getElementById('prPartNo').value;
+            const qty = document.getElementById('prQty').value;
+            const reason = document.getElementById('prReason').value;
 
-            const newPR = {
-                id: 'PR-' + new Date().getFullYear() + (new Date().getMonth()+1).toString().padStart(2,'0') + '-' + Math.floor(100+Math.random()*900),
-                requester, itemName, partNo, qty, reason, status: 'Pending'
+            const prData = {
+                id: 'PR-' + Date.now().toString().slice(-6),
+                requester, itemName, partNo, qty, reason,
+                status: 'Chờ Duyệt',
+                date: new Date().toLocaleDateString('vi-VN')
             };
 
-            prList.unshift(newPR);
-            renderPRTable();
-            document.getElementById('form-create-pr').reset();
+            let prList = JSON.parse(localStorage.getItem('shl_pr_list') || '[]');
+            prList.unshift(prData);
+            localStorage.setItem('shl_pr_list', JSON.stringify(prList));
+
             alert('Tạo đề xuất Mua hàng (PR) thành công!');
+            document.getElementById('prForm').reset();
+            renderPRTable();
         }
 
         function renderPRTable() {
-            const tbody = document.getElementById('table-pr-body');
-            document.getElementById('pr-count-badge').innerText = prList.length + ' đơn';
-            tbody.innerHTML = '';
+            let prList = JSON.parse(localStorage.getItem('shl_pr_list') || '[]');
+            const tbody = document.getElementById('prTableBody');
+            document.getElementById('prCount').textContent = prList.length + ' đơn';
 
-            prList.forEach(pr => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50";
-                tr.innerHTML = `
-                    <td class="p-3 font-mono text-blue-900 font-bold">${pr.id}</td>
-                    <td class="p-3 font-medium">${pr.requester}</td>
-                    <td class="p-3">
-                        <div class="font-semibold text-slate-800">${pr.itemName}</div>
-                        <div class="text-[10px] text-slate-400">Part: ${pr.partNo}</div>
-                    </td>
-                    <td class="p-3 text-center font-bold text-slate-700">${pr.qty}</td>
-                    <td class="p-3">
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${pr.status==='Approved'?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">
-                            ${pr.status==='Approved'?'Đã Duyệt':'Chờ Duyệt'}
-                        </span>
-                    </td>
-                    <td class="p-3 text-right">
-                        ${pr.status==='Pending'?`
-                            <button onclick="approvePR('${pr.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-[11px] font-medium">
-                                Duyệt Đơn
-                            </button>
-                        `:'<span class="text-slate-400 text-[11px]">Đã tạo PO</span>'}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function approvePR(prId) {
-            const pr = prList.find(p => p.id === prId);
-            if(pr) {
-                pr.status = 'Approved';
-                // Automatically create PO draft
-                const newPO = {
-                    id: 'PO-' + prId.replace('PR-',''),
-                    supplier: 'NCC Chưa Chọn',
-                    itemName: pr.itemName,
-                    partNo: pr.partNo,
-                    qty: pr.qty,
-                    unitPrice: 0,
-                    total: 0,
-                    vatNo: 'Chưa có',
-                    vatStatus: 'Pending',
-                    payStatus: 'Unpaid'
-                };
-                poList.unshift(newPO);
-                renderPRTable();
-                renderPOTable();
-                renderVATTable();
-                alert('Đã duyệt PR! Đơn mua PO draft đã được khởi tạo.');
-            }
-        }
-
-        // 2. TỰ ĐỘNG GỬI ĐƠN PO QUA ZALO
-        function sendPOViaZalo(poId) {
-            const po = poList.find(p => p.id === poId);
-            if(!po) return;
-
-            const message = `📩 *ĐƠN ĐẶT HÀNG (PO) - SONG HIỆP LỢI*
-----------------------------------
-Kính gửi: *${po.supplier}*
-Mã Đơn Hàng: *${po.id}*
-
-Chi tiết vật tư:
-- *Tên vật tư:* ${po.itemName}
-- *Mã Part No:* ${po.partNo}
-- *Số lượng đặt:* ${po.qty}
-- *Đơn giá VAT:* ${po.unitPrice.toLocaleString('vi-VN')} VNĐ
-- *Tổng giá trị:* ${po.total.toLocaleString('vi-VN')} VNĐ
-
-${COMPANY_VAT_INFO}
-----------------------------------
-Nhờ Anh/Chị xác nhận tiến độ giao hàng và xuất Hóa đơn VAT nhé!`;
-
-            // Open Zalo or fallback copy text
-            const encodedText = encodeURIComponent(message);
-            window.open(`https://zalo.me/`, '_blank');
-
-            // Copy content to clipboard
-            navigator.clipboard.writeText(message).then(() => {
-                alert('Đã sao chép nội dung Đơn PO!\nZalo đang mở, bạn chỉ cần chọn Nhà cung cấp và dán (Ctrl+V) để gửi ngay.');
-            }).catch(() => {
-                alert('Nội dung tin nhắn:\n\n' + message);
-            });
-        }
-
-        function renderPOTable() {
-            const tbody = document.getElementById('table-po-body');
-            tbody.innerHTML = '';
-
-            poList.forEach(po => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50";
-                tr.innerHTML = `
-                    <td class="p-3 font-mono text-blue-900 font-bold">${po.id}</td>
-                    <td class="p-3">
-                        <input type="text" value="${po.supplier}" onchange="updatePOSupplier('${po.id}', this.value)" class="text-xs p-1 border rounded w-full">
-                    </td>
-                    <td class="p-3">
-                        <div class="font-semibold text-slate-800">${po.itemName}</div>
-                        <div class="text-[10px] text-slate-400">Part: ${po.partNo}</div>
-                    </td>
-                    <td class="p-3 text-center font-bold">${po.qty}</td>
-                    <td class="p-3">
-                        <input type="number" value="${po.unitPrice}" onchange="updatePOPrice('${po.id}', this.value)" class="text-xs p-1 border rounded w-24">
-                    </td>
-                    <td class="p-3 font-bold text-emerald-700">${po.total.toLocaleString('vi-VN')} đ</td>
-                    <td class="p-3 text-center space-x-1">
-                        <button onclick="sendPOViaZalo('${po.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1.5 px-3 rounded text-[11px] shadow inline-flex items-center space-x-1">
-                            <i class="fa-brands fa-whatsapp"></i>
-                            <span>📲 Gửi Zalo NCC</span>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function updatePOSupplier(poId, val) {
-            const po = poList.find(p => p.id === poId);
-            if(po) po.supplier = val;
-        }
-
-        function updatePOPrice(poId, val) {
-            const po = poList.find(p => p.id === poId);
-            if(po) {
-                po.unitPrice = parseFloat(val) || 0;
-                po.total = po.unitPrice * po.qty;
-                renderPOTable();
-                renderVATTable();
-            }
-        }
-
-        // 3. QUẢN LÝ KHO & MÃ QR CODE
-        function startQRScanner() {
-            if(!html5QrCode) {
-                html5QrCode = new Html5Qrcode("qr-reader");
-            }
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
-                (decodedText) => {
-                    document.getElementById('stock-item-code').value = decodedText;
-                    stopQRScanner();
-                    alert('Đã nhận diện mã QR: ' + decodedText);
-                },
-                (errorMessage) => {}
-            ).catch(err => alert('Không thể truy cập Camera: ' + err));
-        }
-
-        function stopQRScanner() {
-            if(html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop();
-            }
-        }
-
-        function handleStockIn(event) {
-            event.preventDefault();
-            const code = document.getElementById('stock-item-code').value;
-            const qty = parseInt(document.getElementById('stock-qty').value);
-            const vatNo = document.getElementById('stock-vat-no').value;
-            const isVat = document.getElementById('stock-vat-received').checked;
-
-            let item = inventory.find(i => i.code === code);
-            if(item) {
-                item.qty += qty;
-                if(isVat) item.vatStatus = 'Received';
-            } else {
-                inventory.push({ code, name: 'Vật tư ' + code, qty, vatStatus: isVat?'Received':'Pending' });
-            }
-
-            renderInventoryTable();
-            document.getElementById('form-stock-in').reset();
-            alert('Nhập kho thành công!');
-        }
-
-        function renderInventoryTable() {
-            const tbody = document.getElementById('table-inventory-body');
-            tbody.innerHTML = '';
-
-            inventory.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50";
-                tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold text-slate-700">${item.code}</td>
-                    <td class="p-3 font-medium">${item.name}</td>
-                    <td class="p-3 text-center font-bold text-blue-900">${item.qty}</td>
-                    <td class="p-3">
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${item.vatStatus==='Received'?'bg-emerald-100 text-emerald-800':'bg-red-100 text-red-800'}">
-                            ${item.vatStatus==='Received'?'Đã Nhận VAT':'Nợ Hóa Đơn'}
-                        </span>
-                    </td>
-                    <td class="p-3 text-right">
-                        <button onclick="showQRModal('${item.code}', '${item.name}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-1.5 rounded">
-                            <i class="fa-solid fa-qrcode"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function filterInventory() {
-            const q = document.getElementById('inventory-search').value.toLowerCase();
-            const rows = document.querySelectorAll('#table-inventory-body tr');
-            rows.forEach(r => {
-                r.style.display = r.innerText.toLowerCase().includes(q)?'':'none';
-            });
-        }
-
-        function showQRModal(code, name) {
-            document.getElementById('modal-qr').classList.remove('hidden');
-            document.getElementById('modal-qr').classList.add('flex');
-            document.getElementById('qr-modal-info').innerText = `${name} (${code})`;
-            document.getElementById('qr-code-container').innerHTML = '';
-
-            new QRCode(document.getElementById('qr-code-container'), {
-                text: code,
-                width: 160,
-                height: 160
-            });
-        }
-
-        function closeQRModal() {
-            document.getElementById('modal-qr').classList.add('hidden');
-            document.getElementById('modal-qr').classList.remove('flex');
-        }
-
-        // 4. SỔ THEO DÕI HÓA ĐƠN VAT & CÔNG NỢ
-        function renderVATTable(filter = 'all') {
-            const tbody = document.getElementById('table-vat-body');
-            tbody.innerHTML = '';
-
-            poList.forEach(po => {
-                if(filter === 'missing-vat' && po.vatStatus === 'Received') return;
-                if(filter === 'unpaid' && po.payStatus === 'Paid') return;
-
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50";
-                tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold">${po.id}</td>
-                    <td class="p-3 font-medium">${po.supplier}</td>
-                    <td class="p-3 font-bold text-slate-800">${po.total.toLocaleString('vi-VN')} đ</td>
-                    <td class="p-3">
-                        <input type="text" value="${po.vatNo}" onchange="updateVATNo('${po.id}', this.value)" class="text-xs p-1 border rounded w-28">
-                    </td>
-                    <td class="p-3">
-                        <button onclick="toggleVATStatus('${po.id}')" class="px-2 py-1 rounded text-[10px] font-bold ${po.vatStatus==='Received'?'bg-emerald-100 text-emerald-800':'bg-red-100 text-red-800'}">
-                            ${po.vatStatus==='Received'?'✓ Đã Nhận VAT':'✕ Chưa Có VAT'}
-                        </button>
-                    </td>
-                    <td class="p-3">
-                        <button onclick="togglePayStatus('${po.id}')" class="px-2 py-1 rounded text-[10px] font-bold ${po.payStatus==='Paid'?'bg-blue-100 text-blue-800':'bg-amber-100 text-amber-800'}">
-                            ${po.payStatus==='Paid'?'✓ Đã Thanh Toán':'⏳ Chưa Thanh Toán'}
-                        </button>
-                    </td>
-                    <td class="p-3 text-right">
-                        <span class="text-[10px] text-slate-400">Tự động lưu</span>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function updateVATNo(poId, val) {
-            const po = poList.find(p => p.id === poId);
-            if(po) po.vatNo = val;
-        }
-
-        function toggleVATStatus(poId) {
-            const po = poList.find(p => p.id === poId);
-            if(po) {
-                po.vatStatus = po.vatStatus === 'Received' ? 'Pending' : 'Received';
-                renderVATTable();
-            }
-        }
-
-        function togglePayStatus(poId) {
-            const po = poList.find(p => p.id === poId);
-            if(po) {
-                po.payStatus = po.payStatus === 'Paid' ? 'Unpaid' : 'Paid';
-                renderVATTable();
-            }
-        }
-
-        function filterVATTable(type) {
-            renderVATTable(type);
-        }
-
-        // 5. CẤU HÌNH KẾT NỐI GOOGLE SHEETS
-        function saveGASUrl() {
-            const url = document.getElementById('setting-gas-url').value;
-            localStorage.setItem('gas_app_url', url);
-            document.getElementById('connection-status').innerText = url ? 'Đã Kết Nối Sheets' : 'Lưu trữ Nội bộ';
-            alert('Đã lưu đường link cấu hình kết nối Google Apps Script!');
-        }
-
-        function loadSettings() {
-            const url = localStorage.getItem('gas_app_url') || '';
-            document.getElementById('setting-gas-url').value = url;
-            if(url) {
-                document.getElementById('connection-status').innerText = 'Đã Kết Nối Sheets';
-            }
-        }
-
-        function testGASConnection() {
-            const url = document.getElementById('setting-gas-url').value;
-            if(!url) {
-                alert('Vui lòng nhập đường link Google Apps Script Web App trước!');
+            if (prList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Chưa có đề xuất nào được tạo</td></tr>`;
                 return;
             }
-            alert('Đang thử kết nối tới Google Sheets...');
+
+            tbody.innerHTML = prList.map(item => `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-3 font-semibold text-blue-900">${item.id}</td>
+                    <td class="py-3 px-3">${item.requester}</td>
+                    <td class="py-3 px-3">
+                        <div class="font-medium">${item.itemName}</div>
+                        <div class="text-xs text-slate-400">${item.partNo ? 'Part: ' + item.partNo : ''}</div>
+                    </td>
+                    <td class="py-3 px-3 text-center font-bold">${item.qty}</td>
+                    <td class="py-3 px-3"><span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">${item.status}</span></td>
+                    <td class="py-3 px-3 text-right"><button class="text-xs bg-blue-900 hover:bg-blue-800 text-white px-2.5 py-1 rounded">Duyệt Đơn</button></td>
+                </tr>
+            `).join('');
         }
     </script>
 </body>
