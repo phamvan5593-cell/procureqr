@@ -6,29 +6,30 @@
     <title>ProcureQR v3.0 - Công Ty TNHH TM-KT Song Hiệp Lợi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
 
     <!-- Header -->
-    <header class="bg-slate-900 text-white shadow-md">
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-4">
-                <img src="https://lh3.googleusercontent.com/d/16ASDaeXMxyZn7qkDuKkdo-bmBR8BAGjP" alt="Logo SHL" class="h-12 w-auto object-contain bg-white p-1 rounded">
+                <img src="https://lh3.googleusercontent.com/d/16ASDaeXMxyZn7qkDuKkdo-bmBR8BAGjP" alt="Logo SHL" class="h-11 w-auto object-contain bg-white p-1 rounded">
                 <div>
                     <h1 class="text-base font-bold leading-tight text-blue-300 tracking-wide uppercase">CÔNG TY TNHH TM-KT SONG HIỆP LỢI</h1>
-                    <p class="text-xs text-slate-300 font-medium">ProcureQR <span class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full">v3.0</span> - Quản Lý Đề Xuất & Tồn Kho</p>
+                    <p class="text-xs text-slate-300 font-medium">ProcureQR <span class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full">v3.0</span> - Quản Lý Đặt Hàng & Hóa Đơn VAT</p>
                 </div>
             </div>
             <div class="flex items-center space-x-3">
-                <div id="syncStatusBadge" class="bg-slate-800 text-slate-300 text-xs px-3 py-1.5 rounded-full flex items-center space-x-2 border border-slate-700">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span>Đã Kết Nối Sheets</span>
-                </div>
+                <button onclick="syncAllToSheet()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold shadow flex items-center space-x-1.5">
+                    <i class="fa-solid fa-rotate"></i><span>Đồng Bộ Sheets</span>
+                </button>
                 <button id="adminLoginBtn" onclick="toggleAdminLogin()" class="bg-blue-800 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg border border-blue-600 flex items-center space-x-1.5 shadow-sm">
                     <i class="fa-solid fa-user-shield"></i><span id="adminBtnText">Đăng nhập TPKT / Admin</span>
                 </button>
@@ -39,40 +40,39 @@
         <nav class="bg-slate-800 text-slate-300 text-sm font-medium border-t border-slate-700">
             <div class="max-w-7xl mx-auto px-4 flex space-x-1 overflow-x-auto">
                 <button onclick="switchTab('prTab')" id="btn-prTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-blue-500 text-white bg-slate-700/50">
-                    <i class="fa-solid fa-file-pen text-blue-400"></i><span>Đề Xuất (PR)</span>
+                    <i class="fa-solid fa-file-pen text-blue-400"></i><span>1. Đề Xuất (PR)</span>
                 </button>
                 <button onclick="switchTab('poTab')" id="btn-poTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
-                    <i class="fa-solid fa-cart-shopping text-emerald-400"></i><span>Đơn Mua (PO)</span>
+                    <i class="fa-solid fa-cart-shopping text-emerald-400"></i><span>2. Đơn Mua (PO)</span>
                 </button>
                 <button onclick="switchTab('qrTab')" id="btn-qrTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
-                    <i class="fa-solid fa-boxes-stacked text-purple-400"></i><span>Kho & Mã QR</span>
+                    <i class="fa-solid fa-boxes-stacked text-purple-400"></i><span>3. Kho & Mã QR</span>
                 </button>
                 <button onclick="switchTab('vatTab')" id="btn-vatTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
-                    <i class="fa-solid fa-receipt text-amber-400"></i><span>Hóa Đơn & Công Nợ</span>
+                    <i class="fa-solid fa-receipt text-amber-400"></i><span>4. Hóa Đơn VAT & Công Nợ</span>
                 </button>
                 <button onclick="switchTab('settingsTab')" id="btn-settingsTab" class="tab-btn hidden px-4 py-3 items-center space-x-2 border-b-2 border-transparent hover:text-white text-amber-300 font-semibold">
-                    <i class="fa-solid fa-gear text-amber-400"></i><span>Cấu Hình Sync (Admin)</span>
+                    <i class="fa-solid fa-gear text-amber-400"></i><span>Cấu Hình Sync</span>
                 </button>
             </div>
         </nav>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
 
         <!-- TAB 1: PHIẾU ĐỀ XUẤT MUA HÀNG (PR) -->
         <div id="prTab" class="tab-content active space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Form Đề Xuất -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
+                    <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center space-x-2">
                         <i class="fa-solid fa-circle-plus text-blue-600"></i>
                         <span>Tạo Phiếu Đề Xuất Mua Hàng</span>
                     </h2>
                     <form id="prForm" onsubmit="handleCreatePR(event)" class="space-y-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Người Đề Xuất *</label>
-                            <input type="text" id="prRequester" required placeholder="Ví dụ: Anh Tuấn (Kỹ thuật)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <input type="text" id="prRequester" required placeholder="Anh Tuấn (Kỹ thuật)..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tên Vật Tư / Thiết Bị *</label>
@@ -80,8 +80,8 @@
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Mã Part No. (Tự cấp)</label>
-                                <input type="text" id="prPartNo" readonly class="w-full px-3 py-2 border border-slate-200 bg-slate-100 font-mono text-slate-500 rounded-lg text-sm cursor-not-allowed">
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Mã Part No.</label>
+                                <input type="text" id="prPartNo" readonly class="w-full px-3 py-2 border border-slate-200 bg-slate-100 font-mono text-slate-500 rounded-lg text-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Số Lượng *</label>
@@ -89,8 +89,8 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Lý Do / Mục Đích Sử Dụng</label>
-                            <textarea id="prReason" rows="3" placeholder="Thay thế máy sản xuất dòng 2..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Lý Do / Mục Đích Sử Dụng *</label>
+                            <textarea id="prReason" required rows="3" placeholder="Thay thế máy sản xuất dòng 2..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
                         </div>
                         <button type="submit" id="btnSubmitPR" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm flex items-center justify-center space-x-2">
                             <i class="fa-solid fa-paper-plane"></i>
@@ -99,10 +99,9 @@
                     </form>
                 </div>
 
-                <!-- Danh sách PR -->
                 <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+                        <h2 class="text-base font-bold text-slate-800 flex items-center space-x-2">
                             <i class="fa-solid fa-list-check text-slate-600"></i>
                             <span>Danh Sách Đề Xuất Mua Hàng</span>
                         </h2>
@@ -114,31 +113,30 @@
                                 <tr>
                                     <th class="py-3 px-3">Mã PR</th>
                                     <th class="py-3 px-3">Người Tạo</th>
-                                    <th class="py-3 px-3">Vật Tư</th>
+                                    <th class="py-3 px-3">Vật Tư & Mã Part</th>
+                                    <th class="py-3 px-3">Lý Do Đề Xuất</th>
                                     <th class="py-3 px-3 text-center">SL</th>
-                                    <th class="py-3 px-3">Trạng Thái / Vết Duyệt</th>
+                                    <th class="py-3 px-3">Trạng Thái / Duyệt</th>
                                     <th class="py-3 px-3 text-right">Thao Tác</th>
                                 </tr>
                             </thead>
-                            <tbody id="prTableBody" class="divide-y divide-slate-100">
-                                <!-- Render JS -->
-                            </tbody>
+                            <tbody id="prTableBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 2: ĐƠN MUA HÀNG (PO) HOÀN CHỈNH -->
+        <!-- TAB 2: ĐƠN MUA HÀNG (PO) & GỬI ZALO -->
         <div id="poTab" class="tab-content space-y-6">
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <div class="flex justify-between items-center mb-4">
                     <div>
-                        <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
-                            <i class="fa-solid fa-cart-shopping text-emerald-600"></i>
-                            <span>Danh Sách Đơn Mua Hàng (PO) Tự Động Tạo Từ Đơn PR Đã Duyệt</span>
+                        <h2 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-truck-ramp-box text-emerald-600"></i>
+                            <span>Quản Lý Đơn Mua Hàng (PO) & Gửi Nhà Cung Cấp</span>
                         </h2>
-                        <p class="text-xs text-slate-500 mt-1">Các đơn Đề xuất sau khi TPKT duyệt sẽ tự động chuyển sang đây để làm việc với Nhà cung cấp.</p>
+                        <p class="text-xs text-slate-500 mt-1">Chốt đơn giá VAT, chọn NCC và gửi đơn đặt hàng chuyên nghiệp qua Zalo chỉ với 1-Click.</p>
                     </div>
                     <span id="poCount" class="text-xs bg-emerald-100 font-semibold text-emerald-800 px-2.5 py-1 rounded-full">0 đơn</span>
                 </div>
@@ -147,34 +145,122 @@
                         <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
                             <tr>
                                 <th class="py-3 px-3">Mã PO</th>
-                                <th class="py-3 px-3">Mã PR Nguyện Cầu</th>
-                                <th class="py-3 px-3">Vật Tư / Thiết Bị</th>
-                                <th class="py-3 px-3 text-center">Số Lượng</th>
                                 <th class="py-3 px-3">Nhà Cung Cấp</th>
+                                <th class="py-3 px-3">Vật Tư</th>
+                                <th class="py-3 px-3 text-center">SL</th>
+                                <th class="py-3 px-3">Đơn Giá VAT (đ)</th>
+                                <th class="py-3 px-3">Thành Tiền (đ)</th>
                                 <th class="py-3 px-3">Trạng Thái PO</th>
+                                <th class="py-3 px-3 text-center">Thao Tác Zalo</th>
                             </tr>
                         </thead>
-                        <tbody id="poTableBody" class="divide-y divide-slate-100">
-                            <!-- Render JS -->
-                        </tbody>
+                        <tbody id="poTableBody" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 3: KHO & MÃ QR -->
+        <!-- TAB 3: KHO & MÃ QR CODE -->
         <div id="qrTab" class="tab-content space-y-6">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-800 mb-2">Quản Lý Tồn Kho & Quét Mã QR</h2>
-                <p class="text-xs text-slate-500">Xem danh mục vật tư tồn kho và quét mã QR nhập xuất.</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                        <i class="fa-solid fa-qrcode text-purple-600"></i>
+                        <span>Quét Camera Mã QR Nhập Kho</span>
+                    </h2>
+                    <div id="qr-reader" class="w-full bg-slate-900 rounded-lg overflow-hidden min-h-[180px] border border-slate-300"></div>
+                    <div class="flex space-x-2">
+                        <button onclick="startQRScanner()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-3 rounded-lg text-xs flex items-center justify-center space-x-1 shadow">
+                            <i class="fa-solid fa-camera"></i><span>Bật Camera Quét</span>
+                        </button>
+                        <button onclick="stopQRScanner()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-3 rounded-lg text-xs">Tắt</button>
+                    </div>
+                    <hr class="border-slate-100">
+                    <form id="formStockIn" onsubmit="handleStockIn(event)" class="space-y-3">
+                        <h3 class="font-semibold text-xs text-slate-700 uppercase">Cập Nhật Nhập Kho Vật Tư</h3>
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600">Mã Vật Tư / Part No. *</label>
+                            <input type="text" id="stockItemCode" required placeholder="Quét QR hoặc nhập mã..." class="w-full text-xs p-2 border border-slate-300 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-600">Tên Vật Tư *</label>
+                            <input type="text" id="stockItemName" required placeholder="Tên vật tư..." class="w-full text-xs p-2 border border-slate-300 rounded">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-600">Số Lượng Nhập *</label>
+                                <input type="number" id="stockQty" min="1" value="1" required class="w-full text-xs p-2 border border-slate-300 rounded">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-600">Trạng Thái Hóa Đơn</label>
+                                <select id="stockVatStatus" class="w-full text-xs p-2 border border-slate-300 rounded">
+                                    <option value="Đã Nhận VAT">Đã Nhận VAT</option>
+                                    <option value="Nợ Hóa Đơn">Nợ Hóa Đơn</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-900 hover:bg-blue-950 text-white font-medium py-2 px-3 rounded text-xs shadow">Xác Nhận Nhập Kho</button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-boxes-stacked text-purple-600"></i>
+                            <span>Danh Mục Vật Tư Tồn Kho & Tem Mã QR</span>
+                        </h2>
+                        <input type="text" id="searchInventory" onkeyup="filterInventory()" placeholder="Tìm tên / mã..." class="text-xs p-2 border border-slate-300 rounded-lg w-48">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th class="py-3 px-3">Mã Vật Tư</th>
+                                    <th class="py-3 px-3">Tên Vật Tư</th>
+                                    <th class="py-3 px-3 text-center">Tồn Kho</th>
+                                    <th class="py-3 px-3">Trạng Thái VAT</th>
+                                    <th class="py-3 px-3 text-right">In Tem QR</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- TAB 4: HÓA ĐƠN & CÔNG NỢ -->
+        <!-- TAB 4: HÓA ĐƠN VAT & CÔNG NỢ (TẢI ẢNH DRIVE THỰC TẾ) -->
         <div id="vatTab" class="tab-content space-y-6">
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-800 mb-2">Sổ Theo Dõi Hóa Đơn VAT & Công Nợ</h2>
-                <p class="text-xs text-slate-500">Đối soát hóa đơn VAT và tiến độ thanh toán cho NCC.</p>
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                            <i class="fa-solid fa-receipt text-amber-500"></i>
+                            <span>Sổ Theo Dõi Hóa Đơn VAT & Công Nợ Nhà Cung Cấp</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">Đính kèm ảnh/file Hóa đơn VAT lưu trực tiếp về thư mục Drive <b>Hoa-Don-ProcureQR</b>.</p>
+                    </div>
+                    <div class="flex space-x-2 text-xs">
+                        <button onclick="renderVATTable('all')" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-medium">Tất Cả</button>
+                        <button onclick="renderVATTable('missing-vat')" class="px-3 py-1.5 rounded-lg bg-red-100 text-red-700 font-medium">Chưa VAT</button>
+                        <button onclick="renderVATTable('unpaid')" class="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-700 font-medium">Chưa Thanh Toán</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-xs uppercase text-slate-500 border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-3">Mã PO</th>
+                                <th class="py-3 px-3">Nhà Cung Cấp</th>
+                                <th class="py-3 px-3">Tổng Tiền (đ)</th>
+                                <th class="py-3 px-3">Ảnh Hóa Đơn (Drive)</th>
+                                <th class="py-3 px-3">Trạng Thái VAT</th>
+                                <th class="py-3 px-3">Trạng Thái Thanh Toán</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vatTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -183,35 +269,46 @@
             <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
                     <i class="fa-solid fa-shield-halved text-amber-500"></i>
-                    <span>Cấu Hình Đồng Bộ (Quản Trị Admin)</span>
+                    <span>Cấu Hình Đồng Bộ Apps Script</span>
                 </h2>
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Google Apps Script Web App URL</label>
-                        <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono">
+                        <input type="url" id="scriptUrlInput" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono">
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="saveSyncConfig()" class="bg-blue-600 text-white font-medium px-4 py-2 rounded-lg text-sm">Lưu Cấu Hình Sync</button>
-                        <button onclick="resetDefaultUrl()" class="bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm">Mặc Định Ban Đầu</button>
-                    </div>
+                    <button onclick="saveSyncConfig()" class="bg-blue-600 text-white font-medium px-4 py-2 rounded-lg text-sm">Lưu Cấu Hình</button>
                 </div>
             </div>
         </div>
 
     </main>
 
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-4 px-4 text-center border-t border-slate-800 mt-auto">
+        <p>© 2026 CÔNG TY TNHH THƯƠNG MẠI - KỸ THUẬT SONG HIỆP LỢI</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">ProcureQR v3.0 - Hệ thống Quản lý Đặt hàng & Hóa đơn VAT tự động</p>
+    </footer>
+
     <script>
-        const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzN3F-0EMPJJu5y9tgF109Z8U4a2fuGifU7CQZ9BII68CLLjrT_-OBecNq7oBQgXRNS9A/exec";
-        const ADMIN_PASS = "123456"; 
+        const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz9QKi7B706ODgoCXmvzBeJwWqv2fAiYUHkq_Q1vAiHY8U9SPLQIPLMgxJJBtI0QzBQKw/exec";
+        const COMPANY_VAT_INFO = `📌 CÔNG TY TNHH TM-KT SONG HIỆP LỢI\nMST: 0305xxxxxx\nĐịa chỉ: Xưởng Sản Xuất Song Hiệp Lợi - Cần Thơ / TP.HCM`;
         
         let isAdmin = false;
+        let adminPassToken = ""; 
         let scriptUrl = localStorage.getItem('shl_script_url') || DEFAULT_SCRIPT_URL;
+
+        let inventory = JSON.parse(localStorage.getItem('shl_inventory')) || [
+            { code: 'PART-7600', name: 'Cảm biến quang Omron', qty: 12, vatStatus: 'Đã Nhận VAT' },
+            { code: 'PART-9063', name: 'Cầu chì trung thế 10A', qty: 45, vatStatus: 'Nợ Hóa Đơn' }
+        ];
 
         document.addEventListener('DOMContentLoaded', () => {
             generatePartNo();
             document.getElementById('scriptUrlInput').value = scriptUrl;
             renderPRTable();
             renderPOTable();
+            renderInventoryTable();
+            renderVATTable();
         });
 
         function generatePartNo() {
@@ -221,6 +318,7 @@
         function toggleAdminLogin() {
             if (isAdmin) {
                 isAdmin = false;
+                adminPassToken = "";
                 document.getElementById('adminBtnText').textContent = "Đăng nhập TPKT / Admin";
                 document.getElementById('btn-settingsTab').classList.add('hidden');
                 switchTab('prTab');
@@ -228,16 +326,25 @@
                 alert('Đã thoát quyền Quản trị!');
             } else {
                 const pass = prompt('Nhập mật khẩu xác thực TPKT / Admin:');
-                if (pass === ADMIN_PASS) {
-                    isAdmin = true;
-                    document.getElementById('adminBtnText').textContent = "Thoát Quyền TPKT";
-                    document.getElementById('btn-settingsTab').classList.remove('hidden');
-                    document.getElementById('btn-settingsTab').classList.add('flex');
-                    renderPRTable();
-                    alert('Đăng nhập TPKT thành công! Đã mở quyền duyệt đơn.');
-                } else if (pass !== null) {
-                    alert('❌ Mật khẩu xác thực không chính xác!');
-                }
+                if (!pass) return;
+
+                fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ type: 'VERIFY_PASS', pass: pass })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.auth) {
+                        isAdmin = true;
+                        adminPassToken = pass;
+                        document.getElementById('adminBtnText').textContent = "Thoát Quyền TPKT";
+                        document.getElementById('btn-settingsTab').classList.remove('hidden');
+                        document.getElementById('btn-settingsTab').classList.add('flex');
+                        renderPRTable();
+                        alert('✅ Đăng nhập TPKT thành công!');
+                    } else { alert('❌ Mật khẩu không chính xác!'); }
+                });
             }
         }
 
@@ -250,37 +357,8 @@
             if (btn) btn.classList.add('border-blue-500', 'text-white', 'bg-slate-700/50');
         }
 
-        function saveSyncConfig() {
-            if (!isAdmin) {
-                alert('Chỉ Admin mới có quyền sửa cấu hình!');
-                return;
-            }
-            const inputUrl = document.getElementById('scriptUrlInput').value.trim();
-            if (inputUrl && inputUrl.startsWith('https://script.google.com/macros/s/') && inputUrl.endsWith('/exec')) {
-                localStorage.setItem('shl_script_url', inputUrl);
-                scriptUrl = inputUrl;
-                alert('✅ Đã cập nhật link kết nối mới thành công!');
-            } else {
-                alert('❌ Đường link không hợp lệ!');
-            }
-        }
-
-        function resetDefaultUrl() {
-            if (!isAdmin) {
-                alert('Chỉ Admin mới có quyền khôi phục!');
-                return;
-            }
-            localStorage.removeItem('shl_script_url');
-            scriptUrl = DEFAULT_SCRIPT_URL;
-            document.getElementById('scriptUrlInput').value = DEFAULT_SCRIPT_URL;
-            alert('🔄 Đã khôi phục đường link mặc định!');
-        }
-
         function handleCreatePR(e) {
             e.preventDefault();
-            const btn = document.getElementById('btnSubmitPR');
-            btn.disabled = true;
-
             const prData = {
                 id: 'PR-' + Date.now().toString().slice(-6),
                 requester: document.getElementById('prRequester').value,
@@ -290,8 +368,7 @@
                 reason: document.getElementById('prReason').value,
                 status: 'Chờ Duyệt',
                 date: new Date().toLocaleDateString('vi-VN'),
-                approver: '',
-                approvedTime: ''
+                approver: '', approvedTime: ''
             };
 
             let prList = JSON.parse(localStorage.getItem('shl_pr_list') || '[]');
@@ -304,21 +381,17 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ type: 'SAVE_PR', data: prData })
             }).then(() => {
-                alert('🎉 Tạo đơn PR thành công!');
+                alert('🎉 Tạo phiếu Đề xuất mua hàng (PR) thành công!');
                 resetFormAndTable();
             });
         }
 
         function approvePR(prId) {
-            if (!isAdmin) {
-                alert('🔒 Chỉ Trưởng phòng Kỹ thuật (TPKT) mới có quyền duyệt đơn này!');
-                return;
-            }
+            if (!isAdmin) { alert('🔒 Chỉ TPKT mới có quyền duyệt đơn!'); return; }
 
             const approverName = "Trưởng phòng Kỹ Thuật (TPKT)";
             const approvedTime = new Date().toLocaleString('vi-VN');
 
-            // 1. Cập nhật trạng thái & vết duyệt PR ở Local Storage
             let prList = JSON.parse(localStorage.getItem('shl_pr_list') || '[]');
             let item = prList.find(i => i.id === prId);
             if (item) {
@@ -328,65 +401,98 @@
                 localStorage.setItem('shl_pr_list', JSON.stringify(prList));
             }
 
-            // 2. Tự động thêm 1 đơn PO bên Local Storage
-            let poList = JSON.parse(localStorage.getItem('shl_po_list') || '[]');
-            const poData = {
-                poId: 'PO-' + prId.replace('PR-', ''),
-                prId: prId,
-                itemName: item ? item.itemName : '',
-                qty: item ? item.qty : 1,
-                supplier: 'Chưa chọn NCC',
-                status: 'Chờ phát hành'
-            };
-            poList.unshift(poData);
-            localStorage.setItem('shl_po_list', JSON.stringify(poList));
-
-            // 3. Đẩy lệnh duyệt & lệnh tạo PO về Google Sheets
             fetch(scriptUrl, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    type: 'APPROVE_PR', 
-                    id: prId,
-                    approver: approverName,
-                    approvedTime: approvedTime
-                })
+                body: JSON.stringify({ type: 'APPROVE_PR', id: prId, pass: adminPassToken, approver: approverName, approvedTime: approvedTime })
             });
 
-            alert('✅ TPKT đã duyệt thành công đơn ' + prId + '! Đơn PO đã được khởi tạo tự động.');
+            alert('✅ TPKT đã duyệt đơn ' + prId + '!');
             renderPRTable();
             renderPOTable();
+            renderVATTable();
         }
 
-        function deletePR(prId) {
-            if (!isAdmin) {
-                alert('🔒 Chỉ TPKT / Admin mới có quyền XÓA đơn này!');
-                return;
+        function sendPOViaZalo(poId) {
+            let poList = JSON.parse(localStorage.getItem('shl_po_list') || '[]');
+            let po = poList.find(p => p.poId === poId);
+            if (!po) return;
+
+            po.status = "Đã phát hành";
+            localStorage.setItem('shl_po_list', JSON.stringify(poList));
+            renderPOTable();
+
+            const totalMoney = (parseFloat(po.unitPrice) || 0) * parseInt(po.qty);
+            const msg = `📩 *ĐƠN ĐẶT HÀNG (PO) - SONG HIỆP LỢI*\n----------------------------------\nKính gửi: *${po.supplier || 'Nhà Cung Cấp'}*\nMã Đơn PO: *${po.poId}*\n\nChi tiết vật tư:\n- *Tên vật tư:* ${po.itemName}\n- *Số lượng đặt:* ${po.qty}\n- *Đơn giá VAT:* ${(parseFloat(po.unitPrice)||0).toLocaleString('vi-VN')} VNĐ\n- *Tổng giá trị:* ${totalMoney.toLocaleString('vi-VN')} VNĐ\n\n${COMPANY_VAT_INFO}\n----------------------------------\nNhờ Anh/Chị xác nhận tiến độ giao hàng và xuất Hóa đơn VAT nhé!`;
+
+            navigator.clipboard.writeText(msg).then(() => {
+                alert('✅ Đã sao chép đơn PO!\nZalo đang mở, bạn chỉ cần dán (Ctrl+V) gửi cho NCC.');
+                window.open('https://zalo.me/', '_blank');
+            });
+        }
+
+        // TẢI FILE HÓA ĐƠN VAT LÊN THƯ MỤC DRIVE Hoa-Don-ProcureQR
+        function uploadVATFile(poId, inputEl) {
+            const file = inputEl.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result.split(',')[1];
+                
+                alert('⏳ Đang tải ảnh Hóa đơn VAT lên thư mục Drive Hoa-Don-ProcureQR...');
+
+                fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        type: 'UPLOAD_VAT_FILE',
+                        poId: poId,
+                        fileName: poId + '_' + file.name,
+                        mimeType: file.type,
+                        fileData: base64Data
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.fileUrl) {
+                        let poList = JSON.parse(localStorage.getItem('shl_po_list') || '[]');
+                        let po = poList.find(p => p.poId === poId);
+                        if (po) {
+                            po.vatFileUrl = data.fileUrl;
+                            po.vatStatus = 'Đã Nhận VAT';
+                            localStorage.setItem('shl_po_list', JSON.stringify(poList));
+                            renderVATTable();
+                        }
+                        alert('🎉 Đã lưu thành công ảnh Hóa đơn VAT vào thư mục Hoa-Don-ProcureQR trên Google Drive!');
+                    } else {
+                        alert('❌ Không thể lưu file lên Drive!');
+                    }
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function togglePayStatus(poId) {
+            let poList = JSON.parse(localStorage.getItem('shl_po_list') || '[]');
+            let po = poList.find(p => p.poId === poId);
+            if (po) {
+                po.payStatus = po.payStatus === 'Đã Thanh Toán' ? 'Chưa thanh toán' : 'Đã Thanh Toán';
+                localStorage.setItem('shl_po_list', JSON.stringify(poList));
+                renderVATTable();
             }
-            if (!confirm('Anh có chắc chắn muốn xóa đơn đề xuất ' + prId + ' không?')) return;
+        }
 
+        function syncAllToSheet() {
             let prList = JSON.parse(localStorage.getItem('shl_pr_list') || '[]');
-            prList = prList.filter(item => item.id !== prId);
-            localStorage.setItem('shl_pr_list', JSON.stringify(prList));
-
+            let poList = JSON.parse(localStorage.getItem('shl_po_list') || '[]');
             fetch(scriptUrl, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: 'DELETE_PR', id: prId })
-            });
-
-            alert('🗑️ Đã xóa đơn ' + prId + ' thành công!');
-            renderPRTable();
-        }
-
-        function resetFormAndTable() {
-            const btn = document.getElementById('btnSubmitPR');
-            btn.disabled = false;
-            document.getElementById('prForm').reset();
-            generatePartNo();
-            renderPRTable();
+                body: JSON.stringify({ type: 'SYNC_ALL', prList, poList })
+            }).then(() => alert('🚀 Đã đồng bộ toàn bộ dữ liệu & link Hóa đơn Drive sang Google Sheets!'));
         }
 
         function renderPRTable() {
@@ -395,7 +501,7 @@
             document.getElementById('prCount').textContent = prList.length + ' đơn';
 
             if (prList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Chưa có đề xuất nào được tạo</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">Chưa có đề xuất nào</td></tr>`;
                 return;
             }
 
@@ -407,54 +513,132 @@
                         <div class="font-medium">${item.itemName}</div>
                         <div class="text-xs text-slate-400">${item.partNo ? 'Part: ' + item.partNo : ''}</div>
                     </td>
+                    <td class="py-3 px-3 text-xs text-slate-600 italic">${item.reason || 'Không ghi'}</td>
                     <td class="py-3 px-3 text-center font-bold">${item.qty}</td>
                     <td class="py-3 px-3">
                         <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${item.status === 'Đã Duyệt' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
                             ${item.status}
                         </span>
-                        ${item.status === 'Đã Duyệt' && item.approver ? `
-                            <div class="text-[10px] text-slate-500 mt-1">Duyệt bởi: <b>${item.approver}</b></div>
-                            <div class="text-[10px] text-slate-400">${item.approvedTime || ''}</div>
-                        ` : ''}
+                        ${item.status === 'Đã Duyệt' && item.approver ? `<div class="text-[10px] text-slate-500 mt-1">Duyệt bởi: <b>${item.approver}</b></div>` : ''}
                     </td>
                     <td class="py-3 px-3 text-right space-x-1">
-                        ${isAdmin ? `
-                            ${item.status !== 'Đã Duyệt' ? `
-                                <button onclick="approvePR('${item.id}')" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded font-medium shadow-sm">
-                                    Duyệt Đơn
-                                </button>
-                            ` : ''}
-                            <button onclick="deletePR('${item.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded font-medium border border-red-200">
-                                Xóa
-                            </button>
-                        ` : `
-                            <span class="text-xs text-slate-400 italic">Cần quyền TPKT</span>
-                        `}
+                        ${isAdmin ? `${item.status !== 'Đã Duyệt' ? `<button onclick="approvePR('${item.id}')" class="text-xs bg-blue-600 text-white px-2.5 py-1 rounded">Duyệt Đơn</button>` : ''}` : `<span class="text-xs text-slate-400 italic">Cần quyền TPKT</span>`}
                     </td>
                 </tr>
             `).join('');
         }
 
         function renderPOTable() {
+            let prList = JSON.parse(localStorage.getItem('shl_pr_list') || '[]');
+            let approvedPRs = prList.filter(item => item.status === 'Đã Duyệt');
             let poList = JSON.parse(localStorage.getItem('shl_po_list') || '[]');
+            
+            approvedPRs.forEach(pr => {
+                let poId = 'PO-' + pr.id.replace('PR-', '');
+                if (!poList.some(p => p.poId === poId)) {
+                    poList.push({ poId, prId: pr.id, itemName: pr.itemName, qty: pr.qty, supplier: '', unitPrice: 0, status: 'Chờ phát hành', vatStatus: 'Chưa VAT', payStatus: 'Chưa thanh toán', vatFileUrl: '' });
+                }
+            });
+            localStorage.setItem('shl_po_list', JSON.stringify(poList));
+
             const tbody = document.getElementById('poTableBody');
             document.getElementById('poCount').textContent = poList.length + ' đơn';
 
             if (poList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Chưa có đơn PO nào được tạo</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">Chưa có đơn PO nào</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = poList.map(item => `
+            tbody.innerHTML = poList.map(item => {
+                const total = (parseFloat(item.unitPrice) || 0) * parseInt(item.qty);
+                return `
                 <tr class="hover:bg-slate-50">
-                    <td class="py-3 px-3 font-semibold text-emerald-900 font-mono">${item.poId}</td>
-                    <td class="py-3 px-3 font-mono text-xs text-slate-500">${item.prId}</td>
+                    <td class="py-3 px-3 font-semibold text-emerald-900">${item.poId}</td>
+                    <td class="py-3 px-3"><input type="text" value="${item.supplier || ''}" placeholder="Tên NCC..." onchange="updatePOSupplier('${item.poId}', this.value)" class="text-xs p-1 border rounded w-32"></td>
                     <td class="py-3 px-3 font-medium">${item.itemName}</td>
                     <td class="py-3 px-3 text-center font-bold">${item.qty}</td>
-                    <td class="py-3 px-3 text-slate-600">${item.supplier}</td>
-                    <td class="py-3 px-3"><span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">${item.status}</span></td>
-                </tr>
-            `).join('');
+                    <td class="py-3 px-3"><input type="number" value="${item.unitPrice || 0}" onchange="updatePOPrice('${item.poId}', this.value)" class="text-xs p-1 border rounded w-24"></td>
+                    <td class="py-3 px-3 font-bold text-emerald-700">${total.toLocaleString('vi-VN')} đ</td>
+                    <td class="py-3 px-3"><span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">${item.status || 'Chờ phát hành'}</span></td>
+                    <td class="py-3 px-3 text-center">
+                        <button onclick="sendPOViaZalo('${item.poId}')" class="bg-emerald-600 text-white text-xs px-2.5 py-1 rounded font-medium shadow flex items-center justify-center space-x-1">
+                            <i class="fa-brands fa-whatsapp"></i><span>📲 Gửi Zalo NCC</span>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function updatePOSupplier(poId, val) {
+            let poList = JSON.parse(localStorage.getItem('shl_po_list') || '[]');
+            let item = poList.find(p => p.poId === poId);
+            if (item) { item.supplier = val; localStorage.setItem('shl_po_list', JSON.stringify(poList)); renderVATTable(); }
+        }
+
+        function updatePOPrice(poId, val) {
+            let poList = JSON.parse(localStorage.getItem('shl_po_list') || '[]');
+            let item = poList.find(p => p.poId === poId);
+            if (item) {
+                item.unitPrice = parseFloat(val) || 0;
+                item.total = item.unitPrice * parseInt(item.qty);
+                localStorage.setItem('shl_po_list', JSON.stringify(poList));
+                renderPOTable();
+                renderVATTable();
+            }
+        }
+
+        function renderVATTable(filter = 'all') {
+            let poList = JSON.parse(localStorage.getItem('shl_po_list') || '[]');
+            const tbody = document.getElementById('vatTableBody');
+
+            let filtered = poList.filter(po => {
+                if (filter === 'missing-vat') return po.vatStatus !== 'Đã Nhận VAT';
+                if (filter === 'unpaid') return po.payStatus !== 'Đã Thanh Toán';
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Chưa có bản ghi công nợ nào</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(po => {
+                const total = (parseFloat(po.unitPrice) || 0) * parseInt(po.qty);
+                return `
+                <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-3 font-semibold text-slate-800">${po.poId}</td>
+                    <td class="py-3 px-3 font-medium">${po.supplier || 'Chưa chọn NCC'}</td>
+                    <td class="py-3 px-3 font-bold text-slate-800">${total.toLocaleString('vi-VN')} đ</td>
+                    <td class="py-3 px-3">
+                        ${po.vatFileUrl ? `
+                            <a href="${po.vatFileUrl}" target="_blank" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded font-semibold inline-flex items-center space-x-1">
+                                <i class="fa-solid fa-file-invoice"></i><span>👁️ Xem Ảnh Drive</span>
+                            </a>
+                        ` : `
+                            <label class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded font-medium cursor-pointer border border-slate-300 inline-flex items-center space-x-1">
+                                <i class="fa-solid fa-cloud-arrow-up text-blue-600"></i><span>📷 Tải Ảnh VAT</span>
+                                <input type="file" accept="image/*,application/pdf" onchange="uploadVATFile('${po.poId}', this)" class="hidden">
+                            </label>
+                        `}
+                    </td>
+                    <td class="py-3 px-3">
+                        <span class="px-2.5 py-1 rounded text-xs font-bold ${po.vatStatus==='Đã Nhận VAT'?'bg-emerald-100 text-emerald-800':'bg-red-100 text-red-800'}">
+                            ${po.vatStatus==='Đã Nhận VAT'?'✓ Đã Có VAT':'✕ Chưa VAT'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3">
+                        <button onclick="togglePayStatus('${po.poId}')" class="px-2.5 py-1 rounded text-xs font-bold ${po.payStatus==='Đã Thanh Toán'?'bg-blue-100 text-blue-800':'bg-amber-100 text-amber-800'}">
+                            ${po.payStatus==='Đã Thanh Toán'?'✓ Đã Thanh Toán':'⏳ Chưa Thanh Toán'}
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function resetFormAndTable() {
+            document.getElementById('prForm').reset();
+            generatePartNo();
+            renderPRTable();
         }
     </script>
 </body>
