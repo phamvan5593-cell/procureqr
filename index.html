@@ -24,9 +24,14 @@
                     <p class="text-xs text-slate-400">CÔNG TY TNHH TM-KT SONG HIỆP LỢI</p>
                 </div>
             </div>
-            <div id="syncStatusBadge" class="bg-slate-800 text-slate-300 text-xs px-3 py-1.5 rounded-full flex items-center space-x-2 border border-slate-700">
-                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                <span>Lưu trữ Nội bộ</span>
+            <div class="flex items-center space-x-3">
+                <div id="syncStatusBadge" class="bg-slate-800 text-slate-300 text-xs px-3 py-1.5 rounded-full flex items-center space-x-2 border border-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span>Đã Kết Nối Sheets</span>
+                </div>
+                <button id="adminLoginBtn" onclick="toggleAdminLogin()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 flex items-center space-x-1.5">
+                    <i class="fa-solid fa-lock"></i><span id="adminBtnText">Đăng nhập Admin</span>
+                </button>
             </div>
         </div>
         
@@ -36,8 +41,17 @@
                 <button onclick="switchTab('prTab')" id="btn-prTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-blue-500 text-white bg-slate-700/50">
                     <i class="fa-solid fa-file-pen text-blue-400"></i><span>Đề Xuất (PR)</span>
                 </button>
-                <button onclick="switchTab('settingsTab')" id="btn-settingsTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
-                    <i class="fa-solid fa-sliders text-slate-400"></i><span>Cấu Hình Sync</span>
+                <button onclick="switchTab('poTab')" id="btn-poTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
+                    <i class="fa-solid fa-cart-shopping text-emerald-400"></i><span>Đơn Mua (PO)</span>
+                </button>
+                <button onclick="switchTab('qrTab')" id="btn-qrTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
+                    <i class="fa-solid fa-boxes-stacked text-purple-400"></i><span>Kho & Mã QR</span>
+                </button>
+                <button onclick="switchTab('vatTab')" id="btn-vatTab" class="tab-btn px-4 py-3 flex items-center space-x-2 border-b-2 border-transparent hover:text-white">
+                    <i class="fa-solid fa-receipt text-amber-400"></i><span>Hóa Đơn & Công Nợ</span>
+                </button>
+                <button onclick="switchTab('settingsTab')" id="btn-settingsTab" class="tab-btn hidden px-4 py-3 items-center space-x-2 border-b-2 border-transparent hover:text-white text-amber-300 font-semibold">
+                    <i class="fa-solid fa-gear text-amber-400"></i><span>Cấu Hình Sync (Admin)</span>
                 </button>
             </div>
         </nav>
@@ -66,8 +80,8 @@
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Mã Part No.</label>
-                                <input type="text" id="prPartNo" placeholder="E3F3-R2R2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Mã Part No. (Tự cấp)</label>
+                                <input type="text" id="prPartNo" readonly class="w-full px-3 py-2 border border-slate-200 bg-slate-100 font-mono text-slate-500 rounded-lg text-sm cursor-not-allowed">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Số Lượng *</label>
@@ -103,6 +117,7 @@
                                     <th class="py-3 px-3">Vật Tư</th>
                                     <th class="py-3 px-3 text-center">SL</th>
                                     <th class="py-3 px-3">Trạng Thái</th>
+                                    <th class="py-3 px-3 text-right">Thao Tác</th>
                                 </tr>
                             </thead>
                             <tbody id="prTableBody" class="divide-y divide-slate-100">
@@ -114,20 +129,46 @@
             </div>
         </div>
 
-        <!-- TAB CẤU HÌNH SYNC -->
+        <!-- TAB 2: ĐƠN MUA HÀNG (PO) -->
+        <div id="poTab" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-2">Quản Lý Đơn Mua Hàng (PO)</h2>
+                <p class="text-xs text-slate-500">Chức năng lập và theo dõi đơn PO với Nhà cung cấp.</p>
+            </div>
+        </div>
+
+        <!-- TAB 3: KHO & MÃ QR -->
+        <div id="qrTab" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-2">Quản Lý Tồn Kho & Quét Mã QR</h2>
+                <p class="text-xs text-slate-500">Xem danh mục vật tư tồn kho và quét mã QR nhập xuất.</p>
+            </div>
+        </div>
+
+        <!-- TAB 4: HÓA ĐƠN & CÔNG NỢ -->
+        <div id="vatTab" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-2">Sổ Theo Dõi Hóa Đơn VAT & Công Nợ</h2>
+                <p class="text-xs text-slate-500">Đối soát hóa đơn VAT và tiến độ thanh toán cho NCC.</p>
+            </div>
+        </div>
+
+        <!-- TAB 5: CẤU HÌNH SYNC (BẢO MẬT ADMIN) -->
         <div id="settingsTab" class="tab-content space-y-6">
             <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
-                    <i class="fa-solid fa-cloud-arrow-up text-blue-600"></i>
-                    <span>Kết Nối Google Sheets (Cơ Sở Dữ Liệu Miễn Phí)</span>
+                    <i class="fa-solid fa-shield-halved text-amber-500"></i>
+                    <span>Cấu Hình Đồng Bộ (Quản Trị Admin)</span>
                 </h2>
+                <p class="text-xs text-slate-500 mb-4">Đường link mặc định đã được tích hợp sẵn. Khi anh tạo Triển khai mới (Deployment) trong Apps Script, anh có thể dán đường URL mới vào đây rồi nhấn <b>Lưu Cấu Hình Sync</b>.</p>
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Google Apps Script Web App URL</label>
                         <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono">
                     </div>
-                    <div class="flex space-x-3">
+                    <div class="flex flex-wrap gap-2">
                         <button onclick="saveSyncConfig()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition">Lưu Cấu Hình Sync</button>
+                        <button onclick="resetDefaultUrl()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm transition">Mặc Định Ban Đầu</button>
                         <button onclick="testConnection()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg text-sm transition border border-slate-300">Kiểm Tra Kết Nối</button>
                     </div>
                 </div>
@@ -137,63 +178,88 @@
     </main>
 
     <script>
-        let scriptUrl = localStorage.getItem('shl_script_url') || '';
+        // LINK MẶC ĐỊNH SẮN TRONG CODE NGUỒN
+        const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzubDDbw3ezmBLpqAkpMzSmvdZKztaWIxXXBetZ_2eNJWPbGZIO0LEG6SEiYpHAHWegyw/exec";
+        const ADMIN_PASS = "123456"; 
+        
+        let isAdmin = false;
+        let scriptUrl = localStorage.getItem('shl_script_url') || DEFAULT_SCRIPT_URL;
 
         document.addEventListener('DOMContentLoaded', () => {
-            if (scriptUrl) {
-                document.getElementById('scriptUrlInput').value = scriptUrl;
-                updateSyncBadge(true);
-            }
+            generatePartNo();
+            document.getElementById('scriptUrlInput').value = scriptUrl;
             renderPRTable();
         });
+
+        function generatePartNo() {
+            document.getElementById('prPartNo').value = 'PART-' + Math.floor(1000 + Math.random() * 9000);
+        }
+
+        function toggleAdminLogin() {
+            if (isAdmin) {
+                isAdmin = false;
+                document.getElementById('adminBtnText').textContent = "Đăng nhập Admin";
+                document.getElementById('btn-settingsTab').classList.add('hidden');
+                switchTab('prTab');
+                alert('Đã thoát quyền Admin!');
+            } else {
+                const pass = prompt('Nhập mật khẩu Quản trị (Admin):');
+                if (pass === ADMIN_PASS) {
+                    isAdmin = true;
+                    document.getElementById('adminBtnText').textContent = "Thoát Admin";
+                    document.getElementById('btn-settingsTab').classList.remove('hidden');
+                    document.getElementById('btn-settingsTab').classList.add('flex');
+                    alert('Đăng nhập Quản trị thành công!');
+                } else if (pass !== null) {
+                    alert('❌ Mật khẩu Quản trị không chính xác!');
+                }
+            }
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('border-blue-500', 'text-white', 'bg-slate-700/50'));
+            
             document.getElementById(tabId).classList.add('active');
             const btn = document.getElementById('btn-' + tabId);
             if (btn) btn.classList.add('border-blue-500', 'text-white', 'bg-slate-700/50');
         }
 
         function saveSyncConfig() {
-            const url = document.getElementById('scriptUrlInput').value.trim();
-            if (!url.startsWith('https://script.google.com/macros/s/') || !url.endsWith('/exec')) {
-                alert('❌ Đường link không hợp lệ! Link chuẩn phải bắt đầu bằng https://script.google.com/macros/s/ và kết thúc bằng /exec');
+            if (!isAdmin) {
+                alert('Chỉ Admin mới có quyền sửa cấu hình!');
                 return;
             }
-            localStorage.setItem('shl_script_url', url);
-            scriptUrl = url;
-            updateSyncBadge(true);
-            alert('✅ Đã lưu cấu hình link Google Sheets!');
+            const inputUrl = document.getElementById('scriptUrlInput').value.trim();
+            if (inputUrl && inputUrl.startsWith('https://script.google.com/macros/s/') && inputUrl.endsWith('/exec')) {
+                localStorage.setItem('shl_script_url', inputUrl);
+                scriptUrl = inputUrl;
+                alert('✅ Đã cập nhật link kết nối mới thành công!');
+            } else {
+                alert('❌ Đường link không hợp lệ! Link chuẩn phải bắt đầu bằng https://script.google.com/macros/s/ và kết thúc bằng /exec');
+            }
+        }
+
+        function resetDefaultUrl() {
+            if (!isAdmin) {
+                alert('Chỉ Admin mới có quyền khôi phục cấu hình!');
+                return;
+            }
+            localStorage.removeItem('shl_script_url');
+            scriptUrl = DEFAULT_SCRIPT_URL;
+            document.getElementById('scriptUrlInput').value = DEFAULT_SCRIPT_URL;
+            alert('🔄 Đã khôi phục lại đường link mặc định ban đầu!');
         }
 
         function testConnection() {
-            const url = document.getElementById('scriptUrlInput').value.trim();
-            if (!url.startsWith('https://script.google.com/macros/s/') || !url.endsWith('/exec')) {
-                alert('❌ Đường link không đúng định dạng Google Apps Script!');
-                updateSyncBadge(false);
-                return;
-            }
-
-            fetch(url + '?action=getData')
+            fetch(scriptUrl + '?action=getData')
                 .then(res => res.json())
                 .then(data => {
-                    alert('✅ Kết nối Google Sheets thành công! Dữ liệu sẵn sàng.');
-                    updateSyncBadge(true);
+                    alert('✅ Kết nối Google Sheets thành công! Dữ liệu hoạt động bình thường.');
                 })
                 .catch(err => {
-                    alert('❌ Lỗi kết nối! Kiểm tra lại xem bản Triển khai trong Apps Script đã bật "Bất kỳ ai" (Anyone) chưa.');
-                    updateSyncBadge(false);
+                    alert('❌ Lỗi kết nối tới Google Sheets!');
                 });
-        }
-
-        function updateSyncBadge(isSynced) {
-            const badge = document.getElementById('syncStatusBadge');
-            if (isSynced) {
-                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>Đã Kết Nối Sheets</span>`;
-            } else {
-                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span><span>Lưu trữ Nội bộ</span>`;
-            }
         }
 
         function handleCreatePR(e) {
@@ -218,24 +284,43 @@
             prList.unshift(prData);
             localStorage.setItem('shl_pr_list', JSON.stringify(prList));
 
-            // Đẩy thẳng về Google Sheets
-            if (scriptUrl) {
-                fetch(scriptUrl, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type: 'SAVE_PR', data: prData })
-                }).then(() => {
-                    alert('🎉 Tạo đơn PR và Đồng bộ lên Google Sheets thành công!');
-                    resetFormAndTable();
-                }).catch(() => {
-                    alert('Tạo đơn PR thành công (Lưu nội bộ)!');
-                    resetFormAndTable();
-                });
-            } else {
+            // Đẩy dữ liệu về Google Sheets
+            fetch(scriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'SAVE_PR', data: prData })
+            }).then(() => {
+                alert('🎉 Tạo đơn PR và Đồng bộ về Google Sheets thành công!');
+                resetFormAndTable();
+            }).catch(() => {
                 alert('Tạo đơn PR thành công (Lưu nội bộ)!');
                 resetFormAndTable();
+            });
+        }
+
+        function deletePR(prId) {
+            const pass = prompt('Nhập mật khẩu Quản trị để XÓA đơn ' + prId + ':');
+            if (pass !== ADMIN_PASS) {
+                if (pass !== null) alert('❌ Sai mật khẩu Quản trị! Không thể xóa.');
+                return;
             }
+
+            // Xóa ở Local Storage
+            let prList = JSON.parse(localStorage.getItem('shl_pr_list') || '[]');
+            prList = prList.filter(item => item.id !== prId);
+            localStorage.setItem('shl_pr_list', JSON.stringify(prList));
+
+            // Gửi lệnh xóa về Google Sheets
+            fetch(scriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'DELETE_PR', id: prId })
+            });
+
+            alert('🗑️ Đã xóa đơn ' + prId + ' thành công!');
+            renderPRTable();
         }
 
         function resetFormAndTable() {
@@ -243,6 +328,7 @@
             btn.disabled = false;
             btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Gửi Phiếu Đề Xuất (PR)</span>`;
             document.getElementById('prForm').reset();
+            generatePartNo();
             renderPRTable();
         }
 
@@ -252,7 +338,7 @@
             document.getElementById('prCount').textContent = prList.length + ' đơn';
 
             if (prList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Chưa có đề xuất nào được tạo</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Chưa có đề xuất nào được tạo</td></tr>`;
                 return;
             }
 
@@ -266,6 +352,11 @@
                     </td>
                     <td class="py-3 px-3 text-center font-bold">${item.qty}</td>
                     <td class="py-3 px-3"><span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">${item.status}</span></td>
+                    <td class="py-3 px-3 text-right">
+                        <button onclick="deletePR('${item.id}')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded font-medium border border-red-200">
+                            <i class="fa-solid fa-trash-can mr-1"></i>Xóa
+                        </button>
+                    </td>
                 </tr>
             `).join('');
         }
