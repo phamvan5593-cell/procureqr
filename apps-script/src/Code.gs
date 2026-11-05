@@ -62,7 +62,7 @@ function doPost(e) {
 
     var handler = ACTIONS[action];
     if (!handler) throw new Error('Lệnh không hợp lệ: ' + action);
-    if (!user) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    if (!user && handler.role !== 'public') throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
     if (handler.role === 'manager' && user.role !== 'manager') {
       throw new Error('Chỉ ' + managerNames_() + ' mới có quyền thực hiện thao tác này.');
     }
@@ -84,7 +84,7 @@ function doPost(e) {
 var ACTIONS = {
   logout:        { fn: logout_ },
   changePin:     { fn: changePin_ },
-  savePR:        { fn: savePR_ },
+  savePR:        { fn: savePR_, role: 'public' }, // nhân viên không cần đăng nhập vẫn tạo được PR
   approvePR:     { fn: approvePR_, role: 'manager' },
   rejectPR:      { fn: rejectPR_,  role: 'manager' },
   deletePR:      { fn: deletePR_ },
@@ -171,6 +171,7 @@ function savePR_(d, user) {
   var item = requireItem_(d.partNo);
   var qty = positiveNumber_(d.qty, 'Số lượng');
   if (!str_(d.reason)) throw new Error('Vui lòng nhập lý do đề xuất.');
+  if (!user && !str_(d.requester)) throw new Error('Vui lòng ghi tên người đề xuất.');
   var id = nextId_('PR', 'PR', 'Mã PR');
   appendRow_('PR', {
     'Mã PR': id,
@@ -183,7 +184,7 @@ function savePR_(d, user) {
     'Số Lượng': qty,
     'Lý Do': str_(d.reason),
     'Trạng Thái': PR_STATUS.WAIT,
-    'Người Tạo': user.name
+    'Người Tạo': user ? user.name : '(nhân viên – không đăng nhập)'
   });
   return { id: id };
 }
