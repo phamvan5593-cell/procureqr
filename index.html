@@ -324,15 +324,18 @@ async function api(action, data) {
   if (!res.ok) throw new Error('Lỗi kết nối máy chủ (' + res.status + ')');
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Lỗi không xác định');
+  if (json.all) S.fresh = json.all; // dữ liệu mới gửi kèm sau lệnh ghi
   return json.data;
 }
 
 async function run(action, data, okMsg) {
   setBusy(true);
   try {
+    S.fresh = null;
     const r = await api(action, data);
     if (okMsg) toast(typeof okMsg === 'function' ? okMsg(r) : okMsg, 'ok');
-    await loadData(true);
+    if (S.fresh) { S.data = S.fresh; S.user = S.fresh.user; S.fresh = null; renderAll(); stamp(); }
+    else await loadData(true);
     return r;
   } catch (e) {
     toast('❌ ' + e.message, 'err');
@@ -349,13 +352,15 @@ async function loadData(silent) {
     if (S.token && !d.user) { doLogout(true); return; }
     S.user = d.user;
     document.getElementById('loading').classList.add('hidden');
-    document.getElementById('syncState').textContent = 'Cập nhật ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    stamp();
     renderAll();
   } catch (e) {
     document.getElementById('loading').innerHTML = '❌ Không tải được dữ liệu: ' + esc(e.message) + ' <button class="underline" onclick="loadData()">Thử lại</button>';
     toast('❌ ' + e.message, 'err');
   } finally { if (!silent) setBusy(false); }
 }
+
+function stamp() { document.getElementById('syncState').textContent = 'Cập nhật ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }); }
 
 // ================== TIỆN ÍCH ==================
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -371,7 +376,11 @@ function toast(msg, type) {
   t.textContent = msg; t.className = t.className.replace(/bg-\S+/g, '') + ' ' + (type === 'err' ? 'bg-red-600' : 'bg-emerald-600');
   t.style.opacity = 1; clearTimeout(t._h); t._h = setTimeout(() => t.style.opacity = 0, type === 'err' ? 6000 : 3000);
 }
-function setBusy(b) { document.body.style.cursor = b ? 'progress' : ''; document.querySelectorAll('button').forEach(x => { if (b) x.dataset.wasDis = x.disabled; x.disabled = b ? true : x.dataset.wasDis === 'true'; }); }
+function setBusy(b) {
+  document.body.style.cursor = b ? 'progress' : '';
+  const ss = document.getElementById('syncState');
+  if (b) { ss.dataset.prev = ss.textContent; ss.innerHTML = '<span class="text-amber-300 font-semibold">⏳ Đang xử lý...</span>'; }
+  else if (ss.dataset.prev && /Đang xử lý/.test(ss.textContent)) ss.textContent = ss.dataset.prev; document.querySelectorAll('button').forEach(x => { if (b) x.dataset.wasDis = x.disabled; x.disabled = b ? true : x.dataset.wasDis === 'true'; }); }
 function val(id) { return document.getElementById(id).value.trim(); }
 function isStaff() { return !!S.user; }
 function isManager() { return S.user && S.user.role === 'manager'; }

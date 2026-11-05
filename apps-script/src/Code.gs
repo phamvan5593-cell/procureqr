@@ -80,7 +80,8 @@ function doPost(e) {
     try {
       var result = handler.fn(req.data || {}, user);
       SpreadsheetApp.flush();
-      return json_({ ok: true, data: result });
+      // Trả luôn dữ liệu mới để web khỏi phải gọi getData thêm 1 lần nữa
+      return json_({ ok: true, data: result, all: getData_(user) });
     } finally {
       lock.releaseLock();
     }
@@ -386,7 +387,7 @@ function deletePR_(d, user) {
   if ([PR_STATUS.WAIT, PR_STATUS.REJECT, PR_STATUS.QUOTE_NO].indexOf(pr['Trạng Thái']) < 0) {
     throw new Error('Chỉ xóa được phiếu Chờ Duyệt, Từ Chối hoặc KH không đồng ý.');
   }
-  sheet_('PR').deleteRow(pr._row);
+  deleteRow_('PR', pr._row);
   return true;
 }
 
@@ -571,6 +572,7 @@ function recalcStock_() {
     };
     return headers.map(function (h) { return obj.hasOwnProperty(h) ? obj[h] : ''; });
   });
+  invalidate_('TonKho');
   if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
   if (rows.length) sh.getRange(2, 1, rows.length, headers.length).setValues(rows);
 }
@@ -691,8 +693,14 @@ function sheet_(name) {
   return ensureSheet_(name);
 }
 
+// Bộ nhớ đệm trong 1 lần gọi (mỗi request Apps Script chạy mới, nên không bị dữ liệu cũ giữa các lần gọi).
+// Giúp mỗi tab chỉ đọc từ Sheet 1 lần thay vì hàng chục lần → nhanh hơn nhiều.
+var SHEET_CACHE_ = {}, TABLE_CACHE_ = {};
+function invalidate_(name) { if (name) delete TABLE_CACHE_[name]; else TABLE_CACHE_ = {}; }
+
 /** Tạo tab nếu chưa có; thêm các cột còn thiếu vào cuối (không xoá, không đảo cột có sẵn). */
 function ensureSheet_(name) {
+  if (SHEET_CACHE_[name]) return SHEET_CACHE_[name].sh;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(name);
   var want = SCHEMA[name];
@@ -700,57 +708,84 @@ function ensureSheet_(name) {
     sh = ss.insertSheet(name);
     sh.getRange(1, 1, 1, want.length).setValues([want]);
     styleHeader_(sh);
-    return sh;
-  }
-  if (sh.getLastColumn() === 0) {
+  } else if (sh.getLastColumn() === 0) {
     sh.getRange(1, 1, 1, want.length).setValues([want]);
     styleHeader_(sh);
-    return sh;
+  } else {
+    var have = readHeaders_(sh);
+    var missing = want.filter(function (h) { return have.indexOf(h) < 0; });
+    if (missing.length) {
+      sh.getRange(1, have.length + 1, 1, missing.length).setValues([missing]);
+      styleHeader_(sh);
+    }
   }
-  var have = headers_(sh);
-  var missing = want.filter(function (h) { return have.indexOf(h) < 0; });
-  if (missing.length) {
-    sh.getRange(1, have.length + 1, 1, missing.length).setValues([missing]);
-    styleHeader_(sh);
-  }
+  SHEET_CACHE_[name] = { sh: sh, headers: readHeaders_(sh) };
   return sh;
 }
 
 function headers_(sh) {
+  var name = sh.getName();
+  if (SHEET_CACHE_[name] && SHEET_CACHE_[name].sh === sh) return SHEET_CACHE_[name].headers;
+  return readHeaders_(sh);
+}
+
+function readHeaders_(sh) {
   if (sh.getLastColumn() === 0) return [];
   return sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim(); });
 }
 
-function readTable_(name) {
-  var sh = ensureSheet_(name);
-  var headers = headers_(sh);
-  var rows = [];
-  if (sh.getLastRow() > 1) {
-    var values = sh.getRange(2, 1, sh.getLastRow() - 1, headers.length).getValues();
-    values.forEach(function (v, i) {
-      if (v.every(function (c) { return c === '' || c === null; })) return;
-      var obj = { _row: i + 2 };
-      headers.forEach(function (h, j) { if (h) obj[h] = serialize_(v[j]); });
-      rows.push(obj);
-    });
+var SHEET_MAP_ = null;
+function sheetByName_(name) {
+  if (!SHEET_MAP_) {
+    SHEET_MAP_ = {};
+    SpreadsheetApp.getActiveSpreadsheet().getSheets().forEach(function (s) { SHEET_MAP_[s.getName()] = s; });
   }
-  return { sheet: sh, headers: headers, rows: rows };
+  return SHEET_MAP_[name] || null;
+}
+
+/** Đọc cả tab bằng 1 lần gọi (getDataRange). Cột thiếu chỉ được bổ sung khi ghi (ensureSheet_). */
+function readTable_(name) {
+  if (TABLE_CACHE_[name]) return TABLE_CACHE_[name];
+  var sh = sheetByName_(name) || ensureSheet_(name);
+  var all = sh.getDataRange().getValues();
+  var headers = (all[0] || []).map(function (h) { return String(h).trim(); });
+  var rows = [];
+  for (var i = 1; i < all.length; i++) {
+    var v = all[i];
+    if (v.every(function (c) { return c === '' || c === null; })) continue;
+    var obj = { _row: i + 1 };
+    headers.forEach(function (h, j) { if (h) obj[h] = serialize_(v[j]); });
+    rows.push(obj);
+  }
+  TABLE_CACHE_[name] = { sheet: sh, headers: headers, rows: rows };
+  return TABLE_CACHE_[name];
 }
 
 function appendRow_(name, obj) {
   var sh = ensureSheet_(name);
   var headers = headers_(sh);
   sh.appendRow(headers.map(function (h) { return obj.hasOwnProperty(h) ? obj[h] : ''; }));
+  invalidate_(name);
 }
 
+/** Sửa nhiều cột của 1 dòng: đọc dòng 1 lần, ghi lại 1 lần. */
 function updateRow_(name, row, obj) {
   var sh = ensureSheet_(name);
   var headers = headers_(sh);
+  var rg = sh.getRange(row, 1, 1, headers.length);
+  var values = rg.getValues()[0];
   Object.keys(obj).forEach(function (k) {
     var col = headers.indexOf(k);
     if (col < 0) throw new Error('Tab ' + name + ' thiếu cột "' + k + '".');
-    sh.getRange(row, col + 1).setValue(obj[k]);
+    values[col] = obj[k];
   });
+  rg.setValues([values]);
+  invalidate_(name);
+}
+
+function deleteRow_(name, row) {
+  ensureSheet_(name).deleteRow(row);
+  invalidate_(name);
 }
 
 function findIn_(rows, key, value) {

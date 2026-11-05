@@ -29,6 +29,7 @@ function makeSheet(name) {
     deleteRow: r => { data.splice(r - 1, 1); },
     deleteRows: (r, n) => { data.splice(r - 1, n); },
     setFrozenRows: () => {}, setRowHeight: () => {}, getBandings: () => [], getMaxRows: () => 1000,
+    getDataRange: () => sh.getRange(1, 1, Math.max(sh.getLastRow(), 1), Math.max(sh.getLastColumn(), 1)),
     getProtections: () => [], protect: () => chain()
   };
   return sh;
@@ -68,11 +69,13 @@ const src = path.join(__dirname, '..', 'src');
 
 let fail = 0;
 function check(label, cond) { console.log((cond ? '  ✓ ' : '  ✗ ') + label); if (!cond) fail++; }
+const resetCache = () => vm.runInContext("SHEET_CACHE_ = {}; TABLE_CACHE_ = {}; SHEET_MAP_ = null;", ctx); // mỗi request Apps Script chạy mới
 function post(action, data, token) {
+  resetCache();
   const out = ctx.doPost({ postData: { contents: JSON.stringify({ action, data, token }) } });
   return JSON.parse(out.s);
 }
-const T = n => vm.runInContext(`readTable_('${n}').rows`, ctx);
+const T = n => { resetCache(); return vm.runInContext(`readTable_('${n}').rows`, ctx); };
 
 console.log('1) Tạo dữ liệu mẫu');
 vm.runInContext('seedDemo_()', ctx);
@@ -154,6 +157,8 @@ check('Xuất kho theo PR đã duyệt → PR Đã xuất kho', post('issueStock
 const wq2 = post('checkWarranty', { machineId: T('MayKhachHang')[3]['Mã Máy'], partNo: 'CB-E2E-X5ME1' });
 check('Sau khi thay mới, tra lại = Còn BH linh kiện', wq2.data.status === 'Còn BH linh kiện');
 check('PR thiếu khách hàng (không phải dự trữ) bị chặn', post('savePR', { type: 'Bảo hành', partNo: 'CC-10A', qty: 1, reason: 'x', requester: 'A' }).ok === false);
+
+check('Lệnh ghi trả kèm dữ liệu mới (all)', post('savePR', { type: 'Mua dự trữ kho', partNo: 'CC-10A', qty: 1, reason: 'kiểm tra all' }, tv).all.pr.some(r => r['Lý Do'] === 'kiểm tra all'));
 
 console.log('5) Đọc/ghi theo tên cột (chèn cột lạ vào giữa)');
 const prSh = sheets['PR'];

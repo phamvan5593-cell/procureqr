@@ -126,6 +126,7 @@ function seedDemo_() {
     var sh = ensureSheet_(name);
     if (sh.getLastRow() > 1) sh.deleteRows(2, sh.getLastRow() - 1);
   });
+  invalidate_();
   setupSheets_();
   var vanUser = { id: 'van', name: 'Vân', role: 'staff' };
   var thuyUser = { id: 'thuy', name: 'Thùy', role: 'staff' };
