@@ -36,7 +36,7 @@
 <header class="bg-slate-900 text-white shadow sticky top-0 z-40">
   <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap gap-3 justify-between items-center">
     <div class="flex items-center gap-3">
-      <img src="https://lh3.googleusercontent.com/d/16ASDaeXMxyZn7qkDuKkdo-bmBR8BAGjP" alt="Logo SHL" class="h-10 w-auto bg-white p-1 rounded">
+      <img src="https://lh3.googleusercontent.com/d/16ASDaeXMxyZn7qkDuKkdo-bmBR8BAGjP" alt="Logo SHL" class="h-10 w-auto bg-white p-1 rounded" onerror="this.outerHTML='<div class=&quot;h-10 px-2 flex items-center bg-white text-blue-900 font-black rounded&quot;>SHL</div>'">
       <div>
         <h1 id="hdrCompany" class="text-sm md:text-base font-bold text-blue-300 uppercase leading-tight">CÔNG TY TNHH TM-KT SONG HIỆP LỢI</h1>
         <p class="text-xs text-slate-300">ProcureQR <span class="text-[10px] bg-blue-600 px-2 rounded-full">v3.1</span>
@@ -60,7 +60,7 @@
   <!-- TAB PR -->
   <section id="tab-pr" class="tab-content">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="card staff-only">
+      <div class="card">
         <h2 class="font-bold mb-4"><i class="fa-solid fa-file-pen text-blue-600"></i> Tạo phiếu đề xuất (PR)</h2>
         <form id="prForm" class="space-y-3" onsubmit="submitPR(event)">
           <div><label class="lbl">Người đề xuất *</label><input id="prRequester" class="inp" required></div>
@@ -68,9 +68,10 @@
             <label class="lbl">Vật tư *</label>
             <div class="flex gap-2">
               <input id="prItem" class="inp" list="dlItems" required placeholder="Gõ mã hoặc tên để tìm..." oninput="showItemHint('prItem','prItemHint')">
-              <button type="button" onclick="openItemModal()" class="btn bg-slate-100 hover:bg-slate-200" title="Thêm vật tư mới vào danh mục"><i class="fa-solid fa-plus"></i></button>
+              <button type="button" onclick="openItemModal()" class="btn bg-slate-100 hover:bg-slate-200 staff-only" title="Thêm vật tư mới vào danh mục"><i class="fa-solid fa-plus"></i></button>
             </div>
             <p id="prItemHint" class="text-xs text-slate-500 mt-1"></p>
+            <p id="prItemNote" class="text-xs text-slate-400 mt-1">Không thấy vật tư cần mua? Ghi rõ tên, quy cách vào ô Lý do và chọn vật tư gần nhất, hoặc nhờ Vân / Thùy thêm vào danh mục.</p>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div><label class="lbl">Số lượng *</label><input id="prQty" type="number" min="1" step="any" value="1" class="inp" required></div>
