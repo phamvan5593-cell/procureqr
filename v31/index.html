@@ -23,6 +23,14 @@
   .tbl td { padding: .55rem .6rem; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
   .pill { display: inline-block; font-size: .7rem; font-weight: 700; padding: .1rem .5rem; border-radius: 999px; white-space: nowrap; }
   #toast { transition: opacity .3s; }
+  @media (max-width: 640px) {
+    .tbl.mcards thead { display: none; }
+    .tbl.mcards, .tbl.mcards tbody, .tbl.mcards tr, .tbl.mcards td { display: block; width: 100%; }
+    .tbl.mcards tr { border: 1px solid #e2e8f0; border-radius: .6rem; margin-bottom: .6rem; padding: .4rem .2rem; background: #fff; }
+    .tbl.mcards td { border: 0; padding: .2rem .6rem; text-align: left !important; min-width: 0 !important; max-width: none !important; white-space: normal !important; }
+    .tbl.mcards td:empty { display: none; }
+  }
+
   @media print {
     body * { visibility: hidden !important; }
     #printArea, #printArea * { visibility: visible !important; }
@@ -99,7 +107,7 @@
             <input id="prSearch" class="inp !w-44 !py-1" placeholder="Tìm..." oninput="renderPR()">
           </div>
         </div>
-        <div class="overflow-x-auto"><table class="tbl"><thead><tr>
+        <div class="overflow-x-auto"><table class="tbl mcards"><thead><tr>
           <th>Mã PR</th><th>Vật tư · Khách hàng / Máy</th><th>Bảo hành</th><th>Trạng thái / Thao tác</th>
         </tr></thead><tbody id="prBody"></tbody></table></div>
       </div>
@@ -189,7 +197,7 @@
       </div>
       <div class="card lg:col-span-2">
         <h2 class="font-bold mb-3"><i class="fa-solid fa-clock-rotate-left text-cyan-600"></i> Phiếu nhập / xuất gần đây</h2>
-        <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mã phiếu</th><th>Thời gian</th><th>Loại</th><th>Vật tư</th><th class="text-center">SL</th><th>PO / Khách hàng – Máy</th><th>Người</th></tr></thead>
+        <div class="overflow-x-auto"><table class="tbl mcards"><thead><tr><th>Mã phiếu</th><th>Thời gian</th><th>Loại</th><th>Vật tư</th><th class="text-center">SL</th><th>PO / Khách hàng – Máy</th><th>Người</th></tr></thead>
         <tbody id="recentBody"></tbody></table></div>
       </div>
     </div>
@@ -206,7 +214,7 @@
           <button onclick="openItemModal()" class="btn bg-purple-600 text-white staff-only"><i class="fa-solid fa-plus"></i> Vật tư mới</button>
         </div>
       </div>
-      <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mã Part</th><th>Tên vật tư</th><th>Nhóm</th><th>ĐVT</th><th class="text-center">Tồn kho</th><th class="text-center">Tối thiểu</th><th class="text-right">Thao tác</th></tr></thead>
+      <div class="overflow-x-auto"><table class="tbl mcards"><thead><tr><th>Mã Part</th><th>Tên vật tư</th><th>Nhóm</th><th>ĐVT</th><th class="text-center">Tồn kho</th><th class="text-center">Tối thiểu</th><th class="text-right">Thao tác</th></tr></thead>
       <tbody id="stockBody"></tbody></table></div>
     </div>
   </section>
@@ -221,7 +229,7 @@
           <input id="logSearch" class="inp !w-56 !py-1" placeholder="Tìm mã, máy, khách hàng..." oninput="renderLog()">
         </div>
       </div>
-      <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mã phiếu</th><th>Thời gian</th><th>Loại</th><th>Vật tư</th><th class="text-center">SL</th><th>Khách hàng / Máy / PO</th><th>Hạn BH</th><th>Bảo hành</th><th>Người</th></tr></thead>
+      <div class="overflow-x-auto"><table class="tbl mcards"><thead><tr><th>Mã phiếu</th><th>Thời gian</th><th>Loại</th><th>Vật tư</th><th class="text-center">SL</th><th>Khách hàng / Máy / PO</th><th>Hạn BH</th><th>Bảo hành</th><th>Người</th></tr></thead>
       <tbody id="logBody"></tbody></table></div>
     </div>
   </section>
@@ -230,7 +238,7 @@
   <section id="tab-vat" class="tab-content">
     <div class="card">
       <h2 class="font-bold mb-3"><i class="fa-solid fa-receipt text-amber-600"></i> Hóa đơn VAT & thanh toán công nợ</h2>
-      <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mã PO</th><th>Nhà cung cấp</th><th class="text-right">Tổng PO (đ)</th><th>Số hóa đơn</th><th>File hóa đơn</th><th class="text-center">Thanh toán</th></tr></thead>
+      <div class="overflow-x-auto"><table class="tbl mcards"><thead><tr><th>Mã PO</th><th>Nhà cung cấp</th><th class="text-right">Tổng PO (đ)</th><th>Số hóa đơn</th><th>File hóa đơn</th><th class="text-center">Thanh toán</th></tr></thead>
       <tbody id="vatBody"></tbody></table></div>
     </div>
   </section>
@@ -242,13 +250,13 @@
         <div class="flex justify-between items-center mb-3"><h2 class="font-bold"><i class="fa-solid fa-building-user text-indigo-600"></i> Khách hàng</h2>
           <button onclick="openCustomerModal()" class="btn bg-indigo-600 text-white"><i class="fa-solid fa-plus"></i> Thêm</button></div>
         <input id="khSearch" class="inp !py-1 mb-2" placeholder="Tìm khách hàng..." oninput="renderCustomers()">
-        <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mã</th><th>Tên khách hàng</th><th>Liên hệ</th><th class="text-center">Số máy</th><th></th></tr></thead><tbody id="khBody"></tbody></table></div>
+        <div class="overflow-x-auto"><table class="tbl mcards"><thead><tr><th>Mã</th><th>Tên khách hàng</th><th>Liên hệ</th><th class="text-center">Số máy</th><th></th></tr></thead><tbody id="khBody"></tbody></table></div>
       </div>
       <div class="card lg:col-span-3">
         <div class="flex flex-wrap gap-2 justify-between items-center mb-3"><h2 class="font-bold"><i class="fa-solid fa-industry text-indigo-600"></i> Máy khách hàng đã mua / SHL bảo trì</h2>
           <div class="flex gap-2"><select id="mayFilter" class="inp !w-auto !py-1" onchange="renderMachines()"></select>
           <button onclick="openMachineModal()" class="btn bg-indigo-600 text-white"><i class="fa-solid fa-plus"></i> Thêm máy</button></div></div>
-        <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mã máy</th><th>Khách hàng</th><th>Tên máy / Model / Serial</th><th>Bàn giao</th><th>BH máy</th><th class="text-center">Lần thay LK</th><th></th></tr></thead><tbody id="mayBody"></tbody></table></div>
+        <div class="overflow-x-auto"><table class="tbl mcards"><thead><tr><th>Mã máy</th><th>Khách hàng</th><th>Tên máy / Model / Serial</th><th>Bàn giao</th><th>BH máy</th><th class="text-center">Lần thay LK</th><th></th></tr></thead><tbody id="mayBody"></tbody></table></div>
       </div>
     </div>
   </section>
@@ -263,7 +271,7 @@
       <div class="card">
         <div class="flex justify-between items-center mb-3"><h2 class="font-bold"><i class="fa-solid fa-handshake"></i> Nhà cung cấp</h2>
           <button onclick="openSupplierModal()" class="btn bg-slate-100"><i class="fa-solid fa-plus"></i> Thêm</button></div>
-        <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mã</th><th>Tên NCC</th><th>Liên hệ</th><th>SĐT/Zalo</th><th></th></tr></thead><tbody id="supBody"></tbody></table></div>
+        <div class="overflow-x-auto"><table class="tbl mcards"><thead><tr><th>Mã</th><th>Tên NCC</th><th>Liên hệ</th><th>SĐT/Zalo</th><th></th></tr></thead><tbody id="supBody"></tbody></table></div>
       </div>
       <div class="card">
         <h2 class="font-bold mb-3"><i class="fa-solid fa-key"></i> Đổi mã PIN của tôi</h2>
@@ -566,6 +574,7 @@ function onTargetChange(p) {
   box.className = 'text-sm rounded-lg p-3 border ' + (ok ? 'bg-emerald-50 border-emerald-200' : w.status === 'Hết BH' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200');
   let tip = '';
   if (p === 'pr' && val('prType') === 'Bảo hành' && w.status === 'Hết BH') tip = '<div class="mt-1 text-red-700 font-semibold">⚠️ Linh kiện / máy đã hết bảo hành – quản lý có thể chuyển sang báo giá khách hàng.</div>';
+  if (p === 'pr' && val('prType') === 'Sửa chữa tính phí' && ok) tip = '<div class="mt-1 text-emerald-800 font-semibold">ℹ️ Linh kiện / máy còn bảo hành – kiểm tra lại, có thể phải chọn loại "Bảo hành" (không tính phí khách).</div>';
   const st = stockOf(it['Mã Part']);
   box.innerHTML = `<div class="font-bold">${warrantyPill(w.status)}</div><div class="text-xs mt-1">${esc(w.detail)}</div>${tip}
     <div class="text-xs mt-1">Tồn kho hiện tại: <b>${st}</b> ${esc(it['Đơn Vị Tính'] || '')}${p === 'pr' && st > 0 ? ' – kho còn hàng, có thể xuất ngay khi được duyệt' : ''}</div>`;
