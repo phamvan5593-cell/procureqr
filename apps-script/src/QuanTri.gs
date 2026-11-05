@@ -6,6 +6,7 @@ function onOpen() {
     .addItem('1. Tạo / kiểm tra các tab', 'menuSetup')
     .addItem('2. Đặt mã PIN người dùng', 'menuSetPins')
     .addItem('3. Tính lại tồn kho', 'menuRecalcStock')
+    .addItem('4. Thêm ô chọn / lịch cho các cột', 'menuApplyValidation')
     .addSeparator()
     .addItem('Tạo dữ liệu mẫu (chỉ dùng cho bản TEST)', 'menuSeedDemo')
     .addItem('Trang trí bảng tính', 'makeSheetBeautiful')
@@ -24,6 +25,71 @@ function setupSheets_() {
   CONFIG_KEYS.forEach(function (k) {
     if (!findIn_(cfg.rows, 'Khóa', k)) appendRow_('CauHinh', { 'Khóa': k, 'Giá Trị': '' });
   });
+}
+
+/**
+ * Ô chọn (dropdown) và lịch cho các cột trên Sheet, để ai sửa trực tiếp trên Sheet cũng khó nhập sai.
+ * Lưu ý: app (Apps Script) ghi dữ liệu không bị chặn bởi các kiểm tra này.
+ */
+function applyValidation_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var vals = function (o) { return Object.keys(o).map(function (k) { return o[k]; }).filter(String); };
+  var ref = function (tab, col) { return { tab: tab, col: col }; };
+  var RULES = {
+    PR: { list: { 'Trạng Thái': vals(PR_STATUS), 'Loại': PR_TYPES, 'Tình Trạng BH': vals(WARRANTY) },
+          ref: { 'Mã Part': ref('DanhMucVatTu', 'Mã Part'), 'Mã KH': ref('KhachHang', 'Mã KH'), 'Mã Máy': ref('MayKhachHang', 'Mã Máy'), 'Mã PO': ref('PO', 'Mã PO') },
+          datetime: ['Ngày Tạo', 'Thời Gian Duyệt', 'Ngày Gửi BG'], number: ['Số Lượng', 'Tồn Lúc Đề Xuất'] },
+    PO: { list: { 'Trạng Thái': vals(PO_STATUS) }, ref: { 'Nhà Cung Cấp': ref('NhaCungCap', 'Tên NCC') },
+          datetime: ['Ngày Tạo', 'Ngày Phát Hành'], number: ['Tổng Tiền'] },
+    PO_ChiTiet: { ref: { 'Mã PO': ref('PO', 'Mã PO'), 'Mã PR': ref('PR', 'Mã PR'), 'Mã Part': ref('DanhMucVatTu', 'Mã Part') },
+                  number: ['SL Đặt', 'Đơn Giá VAT', 'Thành Tiền', 'SL Đã Nhận'] },
+    SoKho: { list: { 'Loại': ['NHẬP', 'XUẤT'] },
+             ref: { 'Mã Part': ref('DanhMucVatTu', 'Mã Part'), 'Mã KH': ref('KhachHang', 'Mã KH'), 'Mã Máy': ref('MayKhachHang', 'Mã Máy'), 'Mã PO': ref('PO', 'Mã PO'), 'Mã PR': ref('PR', 'Mã PR') },
+             datetime: ['Thời Gian'], date: ['Hạn BH'], number: ['Số Lượng', 'Số Tháng BH'] },
+    MayKhachHang: { ref: { 'Mã KH': ref('KhachHang', 'Mã KH') }, date: ['Ngày Bàn Giao', 'Hạn BH Máy'], number: ['Số Tháng BH Máy'] },
+    HoaDon: { list: { 'Trạng Thái Thanh Toán': ['Chưa thanh toán', 'Đã thanh toán'] }, ref: { 'Mã PO': ref('PO', 'Mã PO') },
+              date: ['Ngày Nhận HĐ', 'Ngày Thanh Toán'], number: ['Tổng Tiền'] },
+    DanhMucVatTu: { number: ['Tồn Tối Thiểu'] }
+  };
+  Object.keys(RULES).forEach(function (tab) {
+    var sh = ensureSheet_(tab), headers = headers_(sh), r = RULES[tab];
+    var rows = Math.max(sh.getMaxRows() - 1, 1);
+    var col = function (name) { var i = headers.indexOf(name); return i < 0 ? null : sh.getRange(2, i + 1, rows, 1); };
+    Object.keys(r.list || {}).forEach(function (name) {
+      var rg = col(name); if (!rg) return;
+      rg.setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(r.list[name], true).setAllowInvalid(false)
+        .setHelpText('Chọn trong danh sách').build());
+    });
+    Object.keys(r.ref || {}).forEach(function (name) {
+      var rg = col(name); if (!rg) return;
+      var src = ensureSheet_(r.ref[name].tab), si = headers_(src).indexOf(r.ref[name].col);
+      if (si < 0) return;
+      rg.setDataValidation(SpreadsheetApp.newDataValidation()
+        .requireValueInRange(src.getRange(2, si + 1, Math.max(src.getMaxRows() - 1, 1), 1), true).setAllowInvalid(false)
+        .setHelpText('Chọn mã có trong tab ' + r.ref[name].tab).build());
+    });
+    (r.datetime || []).concat(r.date || []).forEach(function (name) {
+      var rg = col(name); if (!rg) return;
+      rg.setDataValidation(SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(false)
+        .setHelpText('Nhấp đúp để chọn ngày trên lịch').build());
+      rg.setNumberFormat((r.date || []).indexOf(name) >= 0 ? 'dd/MM/yyyy' : 'dd/MM/yyyy HH:mm');
+    });
+    (r.number || []).forEach(function (name) {
+      var rg = col(name); if (!rg) return;
+      rg.setDataValidation(SpreadsheetApp.newDataValidation().requireNumberGreaterThanOrEqualTo(0).setAllowInvalid(false)
+        .setHelpText('Nhập số ≥ 0').build());
+      rg.setNumberFormat('#,##0.##');
+    });
+  });
+  // Tab TonKho do app tự tính: sửa tay sẽ bị hỏi lại
+  var ton = ensureSheet_('TonKho');
+  ton.getProtections(SpreadsheetApp.ProtectionType.SHEET).forEach(function (p) { p.remove(); });
+  ton.protect().setWarningOnly(true).setDescription('Tồn kho do app tự tính từ SoKho – không sửa tay');
+}
+
+function menuApplyValidation() {
+  applyValidation_();
+  SpreadsheetApp.getUi().alert('✅ Đã thêm ô chọn và lịch cho các cột.\n\nLưu ý: nên thao tác trên app; sửa thẳng trên Sheet thì tồn kho, trạng thái PO/PR không tự cập nhật.');
 }
 
 function menuSetPins() {

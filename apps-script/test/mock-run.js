@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const vm = require('vm');
 
+function chain() { const p = new Proxy(function () {}, { get: (o, k) => (k === 'build' ? () => ({}) : () => p) }); return p; }
 function makeSheet(name) {
   const data = []; // mảng 2 chiều
   const width = () => data.reduce((m, r) => Math.max(m, r.length), 0);
@@ -21,13 +22,14 @@ function makeSheet(name) {
         setValue: x => { cell(r, c)[c - 1] = x; return api; },
         clearContent: () => { for (let i = 0; i < nr; i++) for (let j = 0; j < nc; j++) cell(r + i, c + j)[c - 1 + j] = ''; return api; }
       };
-      ['setBackground', 'setFontColor', 'setFontWeight', 'setHorizontalAlignment', 'setVerticalAlignment', 'setFontFamily', 'setFontSize', 'setBorder'].forEach(m => api[m] = () => api);
+      ['setBackground', 'setFontColor', 'setFontWeight', 'setHorizontalAlignment', 'setVerticalAlignment', 'setFontFamily', 'setFontSize', 'setBorder', 'setDataValidation', 'setNumberFormat'].forEach(m => api[m] = () => api);
       return api;
     },
     appendRow: row => { data.length = sh.getLastRow(); data.push(row.slice()); },
     deleteRow: r => { data.splice(r - 1, 1); },
     deleteRows: (r, n) => { data.splice(r - 1, n); },
-    setFrozenRows: () => {}, setRowHeight: () => {}, getBandings: () => []
+    setFrozenRows: () => {}, setRowHeight: () => {}, getBandings: () => [], getMaxRows: () => 1000,
+    getProtections: () => [], protect: () => chain()
   };
   return sh;
 }
@@ -42,7 +44,7 @@ const ss = {
 const props = {}; const cache = {}; const files = [];
 const ctx = {
   console,
-  SpreadsheetApp: { getActiveSpreadsheet: () => ss, flush: () => {}, getUi: () => ({ alert() {} }), BorderStyle: {} },
+  SpreadsheetApp: { getActiveSpreadsheet: () => ss, flush: () => {}, getUi: () => ({ alert() {} }), BorderStyle: {}, ProtectionType: {}, newDataValidation: () => chain() },
   Utilities: {
     formatDate: (d, tz, f) => f === 'yyyy' ? String(d.getFullYear()) : d.toISOString().slice(0, 10),
     getUuid: () => crypto.randomUUID(),
@@ -96,6 +98,9 @@ check('Tồn BD-6204-2RS = 12 - 2 = 10', ton['BD-6204-2RS'] === 10);
 check('Tồn CC-10A = 30 - 5 = 25', ton['CC-10A'] === 25);
 check('PR bị từ chối có ghi chú', T('PR').some(r => r['Trạng Thái'] === 'Từ Chối' && r['Ghi Chú Duyệt']));
 check('Hóa đơn PO1 đã lưu', T('HoaDon').length === 1);
+
+vm.runInContext('applyValidation_()', ctx);
+check('Thêm ô chọn / lịch chạy không lỗi', true);
 
 console.log('2) Đăng nhập & phân quyền qua doPost');
 props['PIN_van'] = vm.runInContext("hash_('1111')", ctx);

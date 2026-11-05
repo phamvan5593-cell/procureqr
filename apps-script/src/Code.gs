@@ -103,6 +103,7 @@ var ACTIONS = {
   saveCustomer:  { fn: saveCustomer_ },
   saveMachine:   { fn: saveMachine_ },
   resetDemo:     { fn: resetDemo_, role: 'manager' }, // chỉ chạy được trên bản TEST
+  setupSheets:   { fn: function () { setupSheets_(); applyValidation_(); return true; }, role: 'manager' }, // không xóa dữ liệu
   createPO:      { fn: createPO_ },
   updatePOItem:  { fn: updatePOItem_ },
   setPOStatus:   { fn: setPOStatus_ },
