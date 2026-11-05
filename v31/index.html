@@ -63,21 +63,28 @@
       <div class="card">
         <h2 class="font-bold mb-4"><i class="fa-solid fa-file-pen text-blue-600"></i> Tạo phiếu đề xuất (PR)</h2>
         <form id="prForm" class="space-y-3" onsubmit="submitPR(event)">
-          <div><label class="lbl">Người đề xuất *</label><input id="prRequester" class="inp" required></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="lbl">Người đề xuất *</label><input id="prRequester" class="inp" required placeholder="Họ tên – bộ phận"></div>
+            <div><label class="lbl">Loại đề xuất *</label><select id="prType" class="inp" onchange="onTargetChange('pr')">
+              <option>Bảo hành</option><option>Sửa chữa tính phí</option><option>Mua dự trữ kho</option></select></div>
+          </div>
+          <div id="prTargetBox" class="space-y-3">
+            <div><label class="lbl">Khách hàng *</label><input id="prCustomer" list="dlCustomers" class="inp" placeholder="Gõ để tìm khách hàng..." oninput="onCustomerInput('pr')"></div>
+            <div><label class="lbl">Máy / dây chuyền *</label>
+              <select id="prMachineSel" class="inp" onchange="onTargetChange('pr')"><option value="">-- Chọn khách hàng trước --</option></select>
+              <input id="prMachine" class="inp mt-2 hidden" placeholder="Tên máy (máy chưa có trong danh sách)" oninput="onTargetChange('pr')"></div>
+          </div>
           <div>
             <label class="lbl">Vật tư *</label>
             <div class="flex gap-2">
-              <input id="prItem" class="inp" list="dlItems" required placeholder="Gõ mã hoặc tên để tìm..." oninput="showItemHint('prItem','prItemHint')">
+              <input id="prItem" class="inp" list="dlItems" required placeholder="Gõ mã hoặc tên để tìm..." oninput="showItemHint('prItem','prItemHint'); onTargetChange('pr')">
               <button type="button" onclick="openItemModal()" class="btn bg-slate-100 hover:bg-slate-200 staff-only" title="Thêm vật tư mới vào danh mục"><i class="fa-solid fa-plus"></i></button>
             </div>
             <p id="prItemHint" class="text-xs text-slate-500 mt-1"></p>
             <p id="prItemNote" class="text-xs text-slate-400 mt-1">Không thấy vật tư cần mua? Ghi rõ tên, quy cách vào ô Lý do và chọn vật tư gần nhất, hoặc nhờ Vân / Thùy thêm vào danh mục.</p>
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div><label class="lbl">Số lượng *</label><input id="prQty" type="number" min="1" step="any" value="1" class="inp" required></div>
-            <div><label class="lbl">Tên máy / dây chuyền</label><input id="prMachine" list="dlMachines" class="inp" placeholder="Máy thổi tuýp số 2..."></div>
-          </div>
-          <div><label class="lbl">Khách hàng / công ty sử dụng</label><input id="prCustomer" list="dlCustomers" class="inp" placeholder="Tự nhập tên khách hàng..."></div>
+          <div id="prWarranty" class="hidden text-sm rounded-lg p-3 border"></div>
+          <div><label class="lbl">Số lượng *</label><input id="prQty" type="number" min="1" step="any" value="1" class="inp" required></div>
           <div><label class="lbl">Lý do đề xuất *</label><textarea id="prReason" rows="2" class="inp" required></textarea></div>
           <button class="btn w-full justify-center bg-blue-800 hover:bg-blue-700 text-white py-2.5"><i class="fa-solid fa-paper-plane"></i> Gửi phiếu đề xuất</button>
         </form>
@@ -87,13 +94,13 @@
           <h2 class="font-bold"><i class="fa-solid fa-list-check"></i> Danh sách phiếu đề xuất</h2>
           <div class="flex gap-2 items-center">
             <select id="prFilter" class="inp !w-auto !py-1" onchange="renderPR()">
-              <option value="">Tất cả</option><option>Chờ Duyệt</option><option>Đã Duyệt</option><option>Đã Đặt Hàng</option><option>Đã Nhận Hàng</option><option>Từ Chối</option>
+              <option value="">Tất cả</option><option>Chờ Duyệt</option><option>Chờ báo giá KH</option><option>Đã gửi báo giá</option><option>Đã Duyệt</option><option>Đã Đặt Hàng</option><option>Đã Nhận Hàng</option><option>Đã xuất kho</option><option>Từ Chối</option><option>KH không đồng ý</option>
             </select>
             <input id="prSearch" class="inp !w-44 !py-1" placeholder="Tìm..." oninput="renderPR()">
           </div>
         </div>
         <div class="overflow-x-auto"><table class="tbl"><thead><tr>
-          <th>Mã PR</th><th>Ngày / Người ĐX</th><th>Khách hàng / Máy</th><th>Vật tư</th><th class="text-center">SL</th><th>Trạng thái</th><th class="text-right">Thao tác</th>
+          <th>Mã PR</th><th>Ngày / Người ĐX</th><th>Khách hàng / Máy</th><th>Vật tư</th><th class="text-center">SL / Tồn</th><th>Bảo hành</th><th>Trạng thái</th><th class="text-right">Thao tác</th>
         </tr></thead><tbody id="prBody"></tbody></table></div>
       </div>
     </div>
@@ -160,14 +167,19 @@
 
         <!-- Xuất -->
         <form id="formOut" class="space-y-3 hidden" onsubmit="submitOut(event)">
-          <div><label class="lbl">Vật tư *</label><input id="outItem" list="dlItems" class="inp" required placeholder="Quét QR hoặc gõ mã..." oninput="showItemHint('outItem','outHint')"><p id="outHint" class="text-xs text-slate-500 mt-1"></p></div>
+          <input type="hidden" id="outPR">
+          <div id="outPRInfo" class="hidden text-xs bg-blue-50 border border-blue-200 rounded p-2"></div>
+          <div><label class="lbl">Vật tư *</label><input id="outItem" list="dlItems" class="inp" required placeholder="Quét QR hoặc gõ mã..." oninput="showItemHint('outItem','outHint'); onTargetChange('out')"><p id="outHint" class="text-xs text-slate-500 mt-1"></p></div>
           <div class="grid grid-cols-2 gap-2">
             <div><label class="lbl">Số lượng *</label><input id="outQty" type="number" min="1" step="any" value="1" class="inp" required></div>
             <div><label class="lbl">Bảo hành</label><select id="outWarranty" class="inp">
               <option value="0">Không bảo hành</option><option value="3">3 tháng</option><option value="6">6 tháng</option><option value="12" selected>12 tháng</option><option value="24">24 tháng</option></select></div>
           </div>
-          <div><label class="lbl">Khách hàng / công ty sử dụng *</label><input id="outCustomer" list="dlCustomers" class="inp" required placeholder="Tự nhập tên khách hàng..."></div>
-          <div><label class="lbl">Tên máy / dây chuyền *</label><input id="outMachine" list="dlMachines" class="inp" required></div>
+          <div><label class="lbl">Khách hàng / công ty sử dụng *</label><input id="outCustomer" list="dlCustomers" class="inp" required placeholder="Gõ để tìm khách hàng..." oninput="onCustomerInput('out')"></div>
+          <div><label class="lbl">Máy / dây chuyền *</label>
+            <select id="outMachineSel" class="inp" onchange="onTargetChange('out')"><option value="">-- Chọn khách hàng trước --</option></select>
+            <input id="outMachine" class="inp mt-2 hidden" placeholder="Tên máy (máy chưa có trong danh sách)" oninput="onTargetChange('out')"></div>
+          <div id="outWarrantyInfo" class="hidden text-sm rounded-lg p-3 border"></div>
           <div class="grid grid-cols-2 gap-2">
             <div><label class="lbl">Người thực hiện</label><input id="outPerformer" class="inp"></div>
             <div><label class="lbl">Ghi chú</label><input id="outNote" class="inp"></div>
@@ -220,6 +232,24 @@
       <h2 class="font-bold mb-3"><i class="fa-solid fa-receipt text-amber-600"></i> Hóa đơn VAT & thanh toán công nợ</h2>
       <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mã PO</th><th>Nhà cung cấp</th><th class="text-right">Tổng PO (đ)</th><th>Số hóa đơn</th><th>File hóa đơn</th><th class="text-center">Thanh toán</th></tr></thead>
       <tbody id="vatBody"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- TAB KHÁCH HÀNG & MÁY -->
+  <section id="tab-kh" class="tab-content">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div class="card lg:col-span-2">
+        <div class="flex justify-between items-center mb-3"><h2 class="font-bold"><i class="fa-solid fa-building-user text-indigo-600"></i> Khách hàng</h2>
+          <button onclick="openCustomerModal()" class="btn bg-indigo-600 text-white"><i class="fa-solid fa-plus"></i> Thêm</button></div>
+        <input id="khSearch" class="inp !py-1 mb-2" placeholder="Tìm khách hàng..." oninput="renderCustomers()">
+        <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mã</th><th>Tên khách hàng</th><th>Liên hệ</th><th class="text-center">Số máy</th><th></th></tr></thead><tbody id="khBody"></tbody></table></div>
+      </div>
+      <div class="card lg:col-span-3">
+        <div class="flex flex-wrap gap-2 justify-between items-center mb-3"><h2 class="font-bold"><i class="fa-solid fa-industry text-indigo-600"></i> Máy khách hàng đã mua / SHL bảo trì</h2>
+          <div class="flex gap-2"><select id="mayFilter" class="inp !w-auto !py-1" onchange="renderMachines()"></select>
+          <button onclick="openMachineModal()" class="btn bg-indigo-600 text-white"><i class="fa-solid fa-plus"></i> Thêm máy</button></div></div>
+        <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Mã máy</th><th>Khách hàng</th><th>Tên máy / Model / Serial</th><th>Bàn giao</th><th>BH máy</th><th class="text-center">Lần thay LK</th><th></th></tr></thead><tbody id="mayBody"></tbody></table></div>
+      </div>
     </div>
   </section>
 
@@ -279,9 +309,10 @@ const TABS = [
   { id: 'po',  label: '2. Đơn mua (PO)', icon: 'fa-cart-shopping text-emerald-400' },
   { id: 'kho', label: '3. Nhập / Xuất kho', icon: 'fa-dolly text-purple-400' },
   { id: 'ton', label: '4. Tồn kho', icon: 'fa-boxes-stacked text-fuchsia-400', pub: true },
-  { id: 'log', label: '5. Sổ kho & Bảo hành', icon: 'fa-shield-halved text-cyan-400' },
+  { id: 'log', label: '5. Tra cứu bảo hành & Sổ kho', icon: 'fa-shield-halved text-cyan-400', pub: true },
   { id: 'vat', label: '6. VAT & Công nợ', icon: 'fa-receipt text-amber-400' },
-  { id: 'cfg', label: '7. Cấu hình', icon: 'fa-gear text-slate-300' }
+  { id: 'kh',  label: '7. Khách hàng & Máy', icon: 'fa-building-user text-indigo-300' },
+  { id: 'cfg', label: '8. Cấu hình', icon: 'fa-gear text-slate-300' }
 ];
 
 let S = { user: null, token: LS.get('token'), data: null, tab: LS.get('tab') || 'pr', mode: 'in' };
@@ -359,7 +390,8 @@ function pill(status) {
   const c = { 'Chờ Duyệt': 'bg-amber-100 text-amber-800', 'Đã Duyệt': 'bg-emerald-100 text-emerald-800', 'Từ Chối': 'bg-red-100 text-red-700',
     'Đã Đặt Hàng': 'bg-blue-100 text-blue-800', 'Đã Nhận Hàng': 'bg-slate-200 text-slate-700', 'Chờ phát hành': 'bg-amber-100 text-amber-800',
     'Đã phát hành': 'bg-blue-100 text-blue-800', 'Nhận 1 phần': 'bg-purple-100 text-purple-800', 'Đã nhận đủ': 'bg-emerald-100 text-emerald-800',
-    'Đã hủy': 'bg-red-100 text-red-700' }[status] || 'bg-slate-100 text-slate-700';
+    'Đã hủy': 'bg-red-100 text-red-700', 'Chờ báo giá KH': 'bg-amber-200 text-amber-900', 'Đã gửi báo giá': 'bg-orange-100 text-orange-800',
+    'KH không đồng ý': 'bg-red-100 text-red-700', 'Đã xuất kho': 'bg-purple-100 text-purple-800' }[status] || 'bg-slate-100 text-slate-700';
   return `<span class="pill ${c}">${esc(status)}</span>`;
 }
 function distinct(arr) { return [...new Set(arr.map(x => String(x || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi')); }
@@ -388,16 +420,15 @@ function renderAll() {
   document.getElementById('userLabel').textContent = S.user ? S.user.name + (isManager() ? ' (Quản lý)' : '') + ' · Thoát' : 'Đăng nhập';
   document.querySelectorAll('.staff-only').forEach(el => el.classList.toggle('hidden', !isStaff()));
   document.getElementById('dlItems').innerHTML = items().map(i => `<option value="${esc(i['Mã Part'] + ' — ' + i['Tên Vật Tư'])}">`).join('');
-  const led = S.data.ledger || [], prs = S.data.pr || [];
-  document.getElementById('dlCustomers').innerHTML = distinct([...prs.map(r => r['Khách Hàng']), ...led.map(r => r['Khách Hàng'])]).map(v => `<option value="${esc(v)}">`).join('');
-  document.getElementById('dlMachines').innerHTML = distinct([...prs.map(r => r['Tên Máy']), ...led.map(r => r['Tên Máy'])]).map(v => `<option value="${esc(v)}">`).join('');
+  document.getElementById('dlCustomers').innerHTML = customers().map(c => `<option value="${esc(custLabel(c))}">`).join('');
+  onCustomerInput('pr'); onCustomerInput('out');
   document.getElementById('apiUrlLabel').textContent = ENV.toUpperCase() + ' – ' + API_URL;
   document.getElementById('apiVersion').textContent = S.data.version || '?';
   if (S.user && !val('prRequester')) document.getElementById('prRequester').value = S.user.name;
   const tab = TABS.find(t => t.id === S.tab);
   switchTab(tab && (tab.pub || isStaff()) ? S.tab : 'pr');
-  renderPR(); renderStock();
-  if (isStaff()) { renderPOPick(); renderPO(); renderInPOSelect(); renderRecent(); renderLog(); renderVAT(); renderConfig(); renderSuppliers(); }
+  renderPR(); renderStock(); renderLog();
+  if (isStaff()) { renderPOPick(); renderPO(); renderInPOSelect(); renderRecent(); renderVAT(); renderConfig(); renderSuppliers(); renderCustomers(); renderMachines(); }
 }
 
 // ================== ĐĂNG NHẬP ==================
@@ -409,7 +440,7 @@ function openLogin() {
       <select id="lgUser" class="inp">${users.map(u => `<option value="${u.id}">${esc(u.name)}${u.role === 'manager' ? ' (Quản lý – duyệt PR)' : ''}</option>`).join('')}</select>
       <input id="lgPin" type="password" inputmode="numeric" autocomplete="current-password" class="inp" placeholder="Mã PIN" required>
       <div class="flex gap-2 justify-end"><button type="button" onclick="closeModal()" class="btn bg-slate-200">Hủy</button><button class="btn bg-blue-700 text-white">Đăng nhập</button></div>
-      <p class="text-xs text-slate-500">Không đăng nhập: chỉ xem phiếu đề xuất và tồn kho.</p>
+      <p class="text-xs text-slate-500">Không cần đăng nhập để tạo phiếu đề xuất, xem tồn kho và tra cứu bảo hành.</p>
     </form>`);
   setTimeout(() => document.getElementById('lgPin').focus(), 50);
 }
@@ -431,38 +462,151 @@ function doLogout(silent) {
 function openModal(html) { document.getElementById('modalBox').innerHTML = html; const m = document.getElementById('modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
 function closeModal() { const m = document.getElementById('modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
 
+// ================== KHÁCH HÀNG / MÁY / BẢO HÀNH (dùng chung cho PR và Xuất kho) ==================
+function customers() { return S.data?.customers || []; }
+function machines() { return S.data?.machines || []; }
+function custLabel(c) { return c['Mã KH'] + ' — ' + c['Tên KH']; }
+function customerByInput(v) {
+  v = String(v || '').trim(); if (!v) return null;
+  const code = v.split(' — ')[0].trim().toUpperCase();
+  return customers().find(c => String(c['Mã KH']).toUpperCase() === code || String(c['Tên KH']).toLowerCase() === v.toLowerCase()) || null;
+}
+function machineLabel(m) { return m['Tên Máy'] + (m['Model'] ? ' · ' + m['Model'] : '') + (m['Số Serial'] ? ' · S/N ' + m['Số Serial'] : ''); }
+function onCustomerInput(p) {
+  const c = customerByInput(val(p + 'Customer'));
+  const sel = document.getElementById(p + 'MachineSel'), cur = sel.value;
+  const list = c ? machines().filter(m => m['Mã KH'] === c['Mã KH']) : [];
+  sel.innerHTML = (c ? (list.length ? '<option value="">-- Chọn máy --</option>' : '<option value="">(Khách hàng chưa có máy trong danh sách)</option>') : '<option value="">-- Chọn khách hàng trước --</option>')
+    + list.map(m => `<option value="${esc(m['Mã Máy'])}" ${m['Mã Máy'] === cur ? 'selected' : ''}>${esc(machineLabel(m))}</option>`).join('')
+    + (val(p + 'Customer') ? '<option value="__other">+ Máy khác (tự ghi tên)</option>' : '');
+  if (list.length === 1 && !cur) sel.value = list[0]['Mã Máy'];
+  onTargetChange(p);
+}
+function getTarget(p) {
+  const c = customerByInput(val(p + 'Customer'));
+  const mid = document.getElementById(p + 'MachineSel').value;
+  const t = { customerId: c ? c['Mã KH'] : '', customer: c ? c['Tên KH'] : val(p + 'Customer'), machineId: '', machine: '' };
+  if (mid && mid !== '__other') { const m = machines().find(x => x['Mã Máy'] === mid); t.machineId = mid; t.machine = m ? m['Tên Máy'] : ''; }
+  else t.machine = val(p + 'Machine');
+  return t;
+}
+/** Giống warrantyFor_ ở backend – để hiện ngay khi nhân viên đang nhập. Backend kiểm lại khi lưu. */
+function warrantyClient(t, partNo) {
+  const now = new Date(), norm = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const hist = (S.data.ledger || S.data.warranty || []).filter(r => r['Loại'] !== 'NHẬP' && r['Mã Part'] === partNo &&
+    (t.machineId ? r['Mã Máy'] === t.machineId : (t.customer && norm(r['Khách Hàng']) === norm(t.customer) && norm(r['Tên Máy']) === norm(t.machine))))
+    .sort((a, b) => byNewest(a, b, 'Thời Gian'));
+  const last = hist[0], m = t.machineId ? machines().find(x => x['Mã Máy'] === t.machineId) : null;
+  const lastTxt = last ? `Lần thay gần nhất: ${fmtDate(last['Thời Gian'])} (${last['Mã Phiếu']})` : '';
+  if (last && Number(last['Số Tháng BH']) > 0 && new Date(last['Hạn BH']) >= now)
+    return { status: 'Còn BH linh kiện', detail: `${lastTxt}, bảo hành ${last['Số Tháng BH']} tháng, còn hạn tới ${fmtDate(last['Hạn BH'])}` };
+  if (m && m['Hạn BH Máy'] && new Date(m['Hạn BH Máy']) >= now)
+    return { status: 'Còn BH máy', detail: `Máy bàn giao ${fmtDate(m['Ngày Bàn Giao'])}, bảo hành máy tới ${fmtDate(m['Hạn BH Máy'])}${lastTxt ? '. ' + lastTxt : ''}` };
+  if (last) return { status: 'Hết BH', detail: `${lastTxt}, ${Number(last['Số Tháng BH']) > 0 ? 'hết hạn ' + fmtDate(last['Hạn BH']) : 'lần trước không bảo hành'}${m && m['Hạn BH Máy'] ? '; BH máy hết ' + fmtDate(m['Hạn BH Máy']) : ''}` };
+  if (m && m['Hạn BH Máy']) return { status: 'Hết BH', detail: `Chưa thay linh kiện này cho máy; bảo hành máy đã hết ${fmtDate(m['Hạn BH Máy'])}` };
+  return { status: 'Chưa có lịch sử', detail: t.machineId ? 'Chưa từng thay linh kiện này cho máy này' : 'Máy chưa có trong danh sách – không đối chiếu được bảo hành' };
+}
+function warrantyPill(s) {
+  const c = { 'Còn BH linh kiện': 'bg-emerald-100 text-emerald-800', 'Còn BH máy': 'bg-emerald-100 text-emerald-800', 'Hết BH': 'bg-red-100 text-red-700', 'Chưa có lịch sử': 'bg-slate-100 text-slate-600' }[s];
+  const icon = { 'Còn BH linh kiện': '🟢', 'Còn BH máy': '🟢', 'Hết BH': '🔴', 'Chưa có lịch sử': '⚪' }[s] || '';
+  return s ? `<span class="pill ${c || 'bg-slate-100'}">${icon} ${esc(s)}</span>` : '<span class="text-xs text-slate-400">—</span>';
+}
+function onTargetChange(p) {
+  const sel = document.getElementById(p + 'MachineSel');
+  document.getElementById(p + 'Machine').classList.toggle('hidden', sel.value !== '__other');
+  const isStock = p === 'pr' && val('prType') === 'Mua dự trữ kho';
+  if (p === 'pr') document.getElementById('prTargetBox').classList.toggle('hidden', isStock);
+  const box = document.getElementById(p === 'pr' ? 'prWarranty' : 'outWarrantyInfo');
+  const it = itemByInput(val(p === 'pr' ? 'prItem' : 'outItem')), t = getTarget(p);
+  if (isStock || !it || !t.customer || (!t.machineId && !t.machine)) { box.classList.add('hidden'); return; }
+  const w = warrantyClient(t, it['Mã Part']);
+  const ok = w.status.startsWith('Còn');
+  box.className = 'text-sm rounded-lg p-3 border ' + (ok ? 'bg-emerald-50 border-emerald-200' : w.status === 'Hết BH' ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200');
+  let tip = '';
+  if (p === 'pr' && val('prType') === 'Bảo hành' && w.status === 'Hết BH') tip = '<div class="mt-1 text-red-700 font-semibold">⚠️ Linh kiện / máy đã hết bảo hành – quản lý có thể chuyển sang báo giá khách hàng.</div>';
+  const st = stockOf(it['Mã Part']);
+  box.innerHTML = `<div class="font-bold">${warrantyPill(w.status)}</div><div class="text-xs mt-1">${esc(w.detail)}</div>${tip}
+    <div class="text-xs mt-1">Tồn kho hiện tại: <b>${st}</b> ${esc(it['Đơn Vị Tính'] || '')}${p === 'pr' && st > 0 ? ' – kho còn hàng, có thể xuất ngay khi được duyệt' : ''}</div>`;
+}
+
 // ================== PR ==================
 function renderPR() {
   const f = val('prFilter'), q = val('prSearch').toLowerCase();
   const rows = (S.data.pr || []).slice().sort((a, b) => byNewest(a, b, 'Mã PR'))
     .filter(r => (!f || r['Trạng Thái'] === f) && (!q || JSON.stringify(r).toLowerCase().includes(q)));
   document.getElementById('prBody').innerHTML = rows.map(r => {
-    const id = esc(r['Mã PR']), st = r['Trạng Thái'];
+    const id = esc(r['Mã PR']), st = r['Trạng Thái'], stock = stockOf(r['Mã Part']);
     let act = '';
-    if (isManager() && st === 'Chờ Duyệt') act += `<button onclick="approvePR('${id}')" class="btn bg-emerald-600 text-white !py-1">Duyệt</button> <button onclick="rejectPR('${id}')" class="btn bg-red-100 text-red-700 !py-1">Từ chối</button> `;
-    if (isStaff() && (st === 'Chờ Duyệt' || st === 'Từ Chối')) act += `<button onclick="deletePR('${id}')" class="btn bg-slate-100 !py-1" title="Xóa phiếu"><i class="fa-solid fa-trash"></i></button>`;
+    if (isManager() && st === 'Chờ Duyệt') {
+      act += `<button onclick="approvePR('${id}')" class="btn bg-emerald-600 text-white !py-1">Duyệt</button> `;
+      if (r['Loại'] !== 'Mua dự trữ kho') act += `<button onclick="toQuote('${id}')" class="btn !py-1 ${r['Tình Trạng BH'] === 'Hết BH' ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-800'}" title="Hết bảo hành – chuyển báo giá cho khách">Báo giá KH</button> `;
+      act += `<button onclick="rejectPR('${id}')" class="btn bg-red-100 text-red-700 !py-1">Từ chối</button> `;
+    }
+    if (isStaff() && st === 'Chờ báo giá KH') act += `<button onclick="quoteSent('${id}')" class="btn bg-amber-500 text-white !py-1">Đã gửi báo giá</button> `;
+    if (isStaff() && st === 'Đã gửi báo giá') act += `<button onclick="quoteResult('${id}', true)" class="btn bg-emerald-600 text-white !py-1">KH đồng ý</button> <button onclick="quoteResult('${id}', false)" class="btn bg-red-100 text-red-700 !py-1">KH không đồng ý</button> `;
+    if (isStaff() && st === 'Đã Duyệt' && stock > 0 && r['Loại'] !== 'Mua dự trữ kho') act += `<button onclick="issueFromPR('${id}')" class="btn bg-purple-600 text-white !py-1" title="Kho còn hàng – xuất luôn không cần mua">📤 Xuất kho</button> `;
+    if (isStaff() && ['Chờ Duyệt', 'Từ Chối', 'KH không đồng ý'].includes(st)) act += `<button onclick="deletePR('${id}')" class="btn bg-slate-100 !py-1" title="Xóa phiếu"><i class="fa-solid fa-trash"></i></button>`;
     if (!act && st === 'Chờ Duyệt') act = '<span class="text-xs text-slate-400 italic">Chờ quản lý duyệt</span>';
+    if (!act && st === 'Chờ báo giá KH') act = '<span class="text-xs text-slate-400 italic">Chờ gửi báo giá</span>';
     const appr = r['Người Duyệt'] ? `<div class="text-[11px] text-slate-500">${esc(r['Người Duyệt'])} · ${fmtDate(r['Thời Gian Duyệt'], true)}${r['Ghi Chú Duyệt'] ? '<br><i>' + esc(r['Ghi Chú Duyệt']) + '</i>' : ''}</div>` : '';
+    const bg = r['Số Báo Giá'] ? `<div class="text-[11px] text-amber-800">BG: ${esc(r['Số Báo Giá'])} · ${fmtDate(r['Ngày Gửi BG'])}</div>` : '';
+    const kq = r['Kết Quả BG'] ? `<div class="text-[11px] text-slate-600">${esc(r['Kết Quả BG'])}</div>` : '';
+    const typeC = { 'Bảo hành': 'bg-cyan-100 text-cyan-800', 'Sửa chữa tính phí': 'bg-orange-100 text-orange-800', 'Mua dự trữ kho': 'bg-slate-200 text-slate-700' }[r['Loại']] || 'bg-slate-100';
     return `<tr class="hover:bg-slate-50">
-      <td class="font-semibold text-blue-900 whitespace-nowrap">${id}${r['Mã PO'] ? `<div class="text-[11px] text-emerald-700">${esc(r['Mã PO'])}</div>` : ''}</td>
+      <td class="font-semibold text-blue-900 whitespace-nowrap">${id}${r['Mã PO'] ? `<div class="text-[11px] text-emerald-700">${esc(r['Mã PO'])}</div>` : ''}${r['Loại'] ? `<div><span class="pill ${typeC}">${esc(r['Loại'])}</span></div>` : ''}</td>
       <td class="whitespace-nowrap">${fmtDate(r['Ngày Tạo'])}<div class="text-xs text-slate-500">${esc(r['Người Đề Xuất'])}</div></td>
       <td><div class="text-xs font-semibold">${esc(r['Khách Hàng'])}</div><div class="text-xs text-slate-500">${esc(r['Tên Máy'])}</div></td>
       <td>${esc(r['Tên Vật Tư'])}<div class="text-xs font-mono text-slate-400">${esc(r['Mã Part'])}</div><div class="text-xs text-slate-500 italic">${esc(r['Lý Do'])}</div></td>
-      <td class="text-center font-bold">${esc(r['Số Lượng'])}</td>
-      <td>${pill(st)}${appr}</td>
-      <td class="text-right whitespace-nowrap">${act}</td></tr>`;
-  }).join('') || '<tr><td colspan="7" class="text-center text-slate-400 py-6">Chưa có phiếu đề xuất</td></tr>';
+      <td class="text-center"><b>${esc(r['Số Lượng'])}</b><div class="text-[11px] ${stock > 0 ? 'text-emerald-700' : 'text-red-600'}">tồn ${stock}</div></td>
+      <td class="max-w-[180px]">${warrantyPill(r['Tình Trạng BH'])}<div class="text-[11px] text-slate-500">${esc(r['Chi Tiết BH'])}</div></td>
+      <td>${pill(st)}${appr}${bg}${kq}</td>
+      <td class="text-right">${act}</td></tr>`;
+  }).join('') || '<tr><td colspan="8" class="text-center text-slate-400 py-6">Chưa có phiếu đề xuất</td></tr>';
 }
 async function submitPR(e) {
   e.preventDefault();
   const it = itemByInput(val('prItem'));
-  if (!it) { toast('❌ Chọn vật tư có trong danh mục (hoặc bấm + để thêm mới).', 'err'); return; }
-  await run('savePR', { requester: val('prRequester'), partNo: it['Mã Part'], qty: val('prQty'), customer: val('prCustomer'), machine: val('prMachine'), reason: val('prReason') },
-    r => '✅ Đã tạo phiếu ' + r.id);
-  ['prItem', 'prReason'].forEach(id => document.getElementById(id).value = ''); document.getElementById('prQty').value = 1; showItemHint('prItem', 'prItemHint');
+  if (!it) { toast('❌ Chọn vật tư có trong danh mục.', 'err'); return; }
+  const type = val('prType'), t = getTarget('pr');
+  if (type !== 'Mua dự trữ kho' && (!t.customer || (!t.machineId && !t.machine))) { toast('❌ Chọn khách hàng và máy.', 'err'); return; }
+  const r = await run('savePR', { requester: val('prRequester'), type, partNo: it['Mã Part'], qty: val('prQty'), reason: val('prReason'), ...(type === 'Mua dự trữ kho' ? {} : t) },
+    r => '✅ Đã tạo phiếu ' + r.id + (r.warranty && r.warranty.status ? ' – ' + r.warranty.status : '')).catch(() => null);
+  if (!r) return;
+  ['prItem', 'prReason'].forEach(id => document.getElementById(id).value = ''); document.getElementById('prQty').value = 1;
+  showItemHint('prItem', 'prItemHint'); onTargetChange('pr');
 }
 function approvePR(id) { run('approvePR', { id, note: '' }, '✅ Đã duyệt ' + id).catch(() => {}); }
 function rejectPR(id) { const note = prompt('Lý do từ chối phiếu ' + id + ':'); if (note) run('rejectPR', { id, note }, 'Đã từ chối ' + id).catch(() => {}); }
+function toQuote(id) {
+  const note = prompt('Chuyển ' + id + ' sang báo giá khách hàng.\nGhi chú (VD: hết bảo hành, báo giá thay mới):', 'Hết bảo hành – báo giá khách hàng');
+  if (note !== null) run('toQuotePR', { id, note }, '✅ ' + id + ' chuyển sang Chờ báo giá KH').catch(() => {});
+}
+function quoteSent(id) {
+  const no = prompt('Số báo giá đã gửi khách cho phiếu ' + id + ':');
+  if (no) run('quoteSent', { id, quoteNo: no }, '✅ Đã ghi nhận gửi báo giá ' + no).catch(() => {});
+}
+function quoteResult(id, accepted) {
+  const note = prompt(accepted ? 'Khách đồng ý báo giá. Ghi chú (không bắt buộc):' : 'Khách KHÔNG đồng ý. Lý do:', '');
+  if (note !== null) run('quoteResult', { id, accepted, note }, accepted ? '✅ KH đồng ý – ' + id + ' chuyển sang Đã Duyệt' : 'Đã ghi nhận KH không đồng ý').catch(() => {});
+}
+function issueFromPR(id) {
+  const r = (S.data.pr || []).find(x => x['Mã PR'] === id); if (!r) return;
+  switchTab('kho'); setMode('out');
+  document.getElementById('outPR').value = id;
+  const info = document.getElementById('outPRInfo'); info.classList.remove('hidden');
+  info.innerHTML = `Xuất theo phiếu <b>${esc(id)}</b> (${esc(r['Loại'])}) <button type="button" class="underline ml-2" onclick="clearOutPR()">bỏ</button>`;
+  const it = items().find(i => i['Mã Part'] === r['Mã Part']);
+  document.getElementById('outItem').value = it ? it['Mã Part'] + ' — ' + it['Tên Vật Tư'] : r['Mã Part'];
+  document.getElementById('outQty').value = r['Số Lượng'];
+  const c = customers().find(x => x['Mã KH'] === r['Mã KH']);
+  document.getElementById('outCustomer').value = c ? custLabel(c) : r['Khách Hàng'];
+  onCustomerInput('out');
+  const sel = document.getElementById('outMachineSel');
+  if (r['Mã Máy']) sel.value = r['Mã Máy']; else { sel.value = '__other'; document.getElementById('outMachine').value = r['Tên Máy']; }
+  if (r['Loại'] === 'Sửa chữa tính phí') document.getElementById('outNote').value = 'Tính phí khách hàng' + (r['Số Báo Giá'] ? ' – BG ' + r['Số Báo Giá'] : '');
+  showItemHint('outItem', 'outHint'); onTargetChange('out');
+}
+function clearOutPR() { document.getElementById('outPR').value = ''; document.getElementById('outPRInfo').classList.add('hidden'); }
 function deletePR(id) { if (confirm('Xóa phiếu ' + id + '?')) run('deletePR', { id }, 'Đã xóa ' + id).catch(() => {}); }
 
 // ================== PO ==================
@@ -613,9 +757,13 @@ async function submitOut(e) {
   const it = itemByInput(val('outItem')); if (!it) { toast('❌ Chọn vật tư có trong danh mục', 'err'); return; }
   const qty = Number(val('outQty'));
   if (qty > stockOf(it['Mã Part'])) { toast('❌ Tồn kho chỉ còn ' + stockOf(it['Mã Part']), 'err'); return; }
-  await run('issueStock', { partNo: it['Mã Part'], qty, customer: val('outCustomer'), machine: val('outMachine'), warrantyMonths: Number(val('outWarranty')), performer: val('outPerformer'), note: val('outNote') },
-    r => '✅ Đã xuất kho – phiếu ' + r.id).catch(() => {});
-  ['outItem', 'outNote'].forEach(id => document.getElementById(id).value = ''); document.getElementById('outQty').value = 1; showItemHint('outItem', 'outHint');
+  const t = getTarget('out');
+  if (!t.customer || (!t.machineId && !t.machine)) { toast('❌ Chọn khách hàng và máy', 'err'); return; }
+  const r = await run('issueStock', { partNo: it['Mã Part'], qty, ...t, prId: val('outPR'), warrantyMonths: Number(val('outWarranty')), performer: val('outPerformer'), note: val('outNote') },
+    r => '✅ Đã xuất kho – phiếu ' + r.id).catch(() => null);
+  if (!r) return;
+  ['outItem', 'outNote'].forEach(id => document.getElementById(id).value = ''); document.getElementById('outQty').value = 1;
+  clearOutPR(); showItemHint('outItem', 'outHint'); onTargetChange('out');
 }
 function renderRecent() {
   const rows = (S.data.ledger || []).slice().sort((a, b) => byNewest(a, b, 'Thời Gian')).slice(0, 15);
@@ -710,7 +858,10 @@ async function submitItem(e, isNew) {
 // ================== SỔ KHO & BẢO HÀNH ==================
 function renderLog() {
   const type = val('logType'), q = val('logSearch').toLowerCase(), now = new Date();
-  const rows = (S.data.ledger || []).slice().sort((a, b) => byNewest(a, b, 'Thời Gian'))
+  // Chưa đăng nhập: chỉ có lịch sử xuất (lắp linh kiện) để tra bảo hành
+  const src = S.data.ledger || (S.data.warranty || []).map(r => ({ ...r, 'Loại': 'XUẤT' }));
+  document.getElementById('logType').classList.toggle('hidden', !S.data.ledger);
+  const rows = src.slice().sort((a, b) => byNewest(a, b, 'Thời Gian'))
     .filter(r => (!type || r['Loại'] === type) && (!q || JSON.stringify(r).toLowerCase().includes(q)));
   document.getElementById('logBody').innerHTML = rows.map(r => {
     const out = r['Loại'] === 'XUẤT', months = Number(r['Số Tháng BH'] || 0);
@@ -765,6 +916,74 @@ async function submitInvoice(e, poId) {
 function togglePaid(poId, paid) { run('setPaid', { poId, paid }, paid ? '✅ Đã đánh dấu thanh toán ' + poId : 'Đã chuyển về chưa thanh toán').catch(() => {}); }
 
 // ================== CẤU HÌNH ==================
+// ================== KHÁCH HÀNG & MÁY ==================
+function machineWarranty(m) {
+  if (!m['Hạn BH Máy']) return '<span class="text-xs text-slate-400">Không có</span>';
+  return new Date(m['Hạn BH Máy']) >= new Date() ? `<span class="pill bg-emerald-100 text-emerald-800">🟢 tới ${fmtDate(m['Hạn BH Máy'])}</span>` : `<span class="pill bg-red-100 text-red-700">🔴 hết ${fmtDate(m['Hạn BH Máy'])}</span>`;
+}
+function renderCustomers() {
+  const q = val('khSearch').toLowerCase();
+  const rows = customers().filter(c => !q || JSON.stringify(c).toLowerCase().includes(q));
+  document.getElementById('khBody').innerHTML = rows.map(c => `<tr>
+    <td class="font-mono text-xs">${esc(c['Mã KH'])}</td><td class="font-semibold">${esc(c['Tên KH'])}<div class="text-xs text-slate-500 font-normal">${esc(c['Địa Chỉ'] || '')}</div></td>
+    <td class="text-xs">${esc(c['Người Liên Hệ'] || '')}<div>${esc(c['SĐT/Zalo'] || '')}</div></td>
+    <td class="text-center"><button class="underline text-indigo-700" onclick="document.getElementById('mayFilter').value='${esc(c['Mã KH'])}';renderMachines()">${machines().filter(m => m['Mã KH'] === c['Mã KH']).length}</button></td>
+    <td class="whitespace-nowrap"><button onclick="openCustomerModal('${esc(c['Mã KH'])}')" class="btn bg-slate-100 !py-1"><i class="fa-solid fa-pen"></i></button>
+      <button onclick="openMachineModal(null,'${esc(c['Mã KH'])}')" class="btn bg-indigo-50 text-indigo-700 !py-1" title="Thêm máy cho khách này">+ Máy</button></td></tr>`).join('')
+    || '<tr><td colspan="5" class="text-center text-slate-400 py-4">Chưa có khách hàng</td></tr>';
+}
+function renderMachines() {
+  const sel = document.getElementById('mayFilter'), cur = sel.value;
+  sel.innerHTML = '<option value="">Tất cả khách hàng</option>' + customers().map(c => `<option value="${esc(c['Mã KH'])}" ${c['Mã KH'] === cur ? 'selected' : ''}>${esc(c['Tên KH'])}</option>`).join('');
+  const hist = S.data.ledger || S.data.warranty || [];
+  const rows = machines().filter(m => !sel.value || m['Mã KH'] === sel.value);
+  document.getElementById('mayBody').innerHTML = rows.map(m => `<tr>
+    <td class="font-mono text-xs">${esc(m['Mã Máy'])}</td><td class="text-xs font-semibold">${esc(m['Tên KH'])}</td>
+    <td>${esc(m['Tên Máy'])}<div class="text-xs text-slate-500">${esc([m['Model'], m['Số Serial'] ? 'S/N ' + m['Số Serial'] : ''].filter(Boolean).join(' · '))}</div></td>
+    <td class="text-xs">${fmtDate(m['Ngày Bàn Giao'])}</td><td>${machineWarranty(m)}</td>
+    <td class="text-center"><button class="underline text-indigo-700" onclick="switchTab('log');document.getElementById('logSearch').value='${esc(m['Mã Máy'])}';renderLog()">${hist.filter(h => h['Mã Máy'] === m['Mã Máy'] && h['Loại'] !== 'NHẬP').length}</button></td>
+    <td><button onclick="openMachineModal('${esc(m['Mã Máy'])}')" class="btn bg-slate-100 !py-1"><i class="fa-solid fa-pen"></i></button></td></tr>`).join('')
+    || '<tr><td colspan="7" class="text-center text-slate-400 py-4">Chưa có máy</td></tr>';
+}
+function openCustomerModal(id) {
+  const c = id ? customers().find(x => x['Mã KH'] === id) || {} : {};
+  openModal(`<h3 class="font-bold mb-4">${id ? 'Sửa khách hàng ' + esc(id) : 'Thêm khách hàng'}</h3>
+    <form class="space-y-3" onsubmit="submitCustomer(event,'${esc(id || '')}')">
+      <div><label class="lbl">Tên khách hàng *</label><input id="khName" class="inp" required value="${esc(c['Tên KH'] || '')}"></div>
+      <div class="grid grid-cols-2 gap-2"><div><label class="lbl">Người liên hệ</label><input id="khContact" class="inp" value="${esc(c['Người Liên Hệ'] || '')}"></div>
+        <div><label class="lbl">SĐT / Zalo</label><input id="khPhone" class="inp" value="${esc(c['SĐT/Zalo'] || '')}"></div></div>
+      <div><label class="lbl">MST</label><input id="khTax" class="inp" value="${esc(c['MST'] || '')}"></div>
+      <div><label class="lbl">Địa chỉ</label><input id="khAddr" class="inp" value="${esc(c['Địa Chỉ'] || '')}"></div>
+      <div><label class="lbl">Ghi chú</label><input id="khNote" class="inp" value="${esc(c['Ghi Chú'] || '')}"></div>
+      <div class="flex gap-2 justify-end"><button type="button" onclick="closeModal()" class="btn bg-slate-200">Hủy</button><button class="btn bg-indigo-600 text-white">Lưu</button></div>
+    </form>`);
+}
+async function submitCustomer(e, id) {
+  e.preventDefault();
+  const r = await run('saveCustomer', { id, name: val('khName'), contact: val('khContact'), phone: val('khPhone'), tax: val('khTax'), address: val('khAddr'), note: val('khNote') }, '✅ Đã lưu khách hàng').catch(() => null);
+  if (r) closeModal();
+}
+function openMachineModal(id, custId) {
+  if (!isStaff()) { openLogin(); return; }
+  const m = id ? machines().find(x => x['Mã Máy'] === id) || {} : { 'Mã KH': custId || '' };
+  openModal(`<h3 class="font-bold mb-4">${id ? 'Sửa máy ' + esc(id) : 'Thêm máy khách hàng'}</h3>
+    <form class="space-y-3" onsubmit="submitMachine(event,'${esc(id || '')}')">
+      <div><label class="lbl">Khách hàng *</label><select id="mCust" class="inp" required><option value="">-- Chọn --</option>${customers().map(c => `<option value="${esc(c['Mã KH'])}" ${c['Mã KH'] === m['Mã KH'] ? 'selected' : ''}>${esc(c['Tên KH'])}</option>`).join('')}</select></div>
+      <div><label class="lbl">Tên máy / dây chuyền *</label><input id="mName" class="inp" required value="${esc(m['Tên Máy'] || '')}" placeholder="VD: Máy thổi tuýp số 2"></div>
+      <div class="grid grid-cols-2 gap-2"><div><label class="lbl">Model</label><input id="mModel" class="inp" value="${esc(m['Model'] || '')}"></div>
+        <div><label class="lbl">Số serial</label><input id="mSerial" class="inp" value="${esc(m['Số Serial'] || '')}"></div></div>
+      <div class="grid grid-cols-2 gap-2"><div><label class="lbl">Ngày bàn giao</label><input id="mDate" type="date" class="inp" value="${m['Ngày Bàn Giao'] ? new Date(m['Ngày Bàn Giao']).toISOString().slice(0, 10) : ''}"></div>
+        <div><label class="lbl">Bảo hành máy (tháng)</label><input id="mMonths" type="number" min="0" class="inp" value="${esc(m['Số Tháng BH Máy'] || 12)}"></div></div>
+      <div><label class="lbl">Ghi chú</label><input id="mNote" class="inp" value="${esc(m['Ghi Chú'] || '')}"></div>
+      <div class="flex gap-2 justify-end"><button type="button" onclick="closeModal()" class="btn bg-slate-200">Hủy</button><button class="btn bg-indigo-600 text-white">Lưu</button></div>
+    </form>`);
+}
+async function submitMachine(e, id) {
+  e.preventDefault();
+  const r = await run('saveMachine', { id, customerId: val('mCust'), name: val('mName'), model: val('mModel'), serial: val('mSerial'), handoverDate: val('mDate'), warrantyMonths: val('mMonths'), note: val('mNote') }, '✅ Đã lưu máy').catch(() => null);
+  if (r) closeModal();
+}
+
 function renderConfig() {
   const cfg = S.data.config || {};
   document.getElementById('cfgForm').innerHTML = Object.keys(cfg).map((k, i) => `<div><label class="lbl">${esc(k)}</label><input class="inp cfgInp" data-key="${esc(k)}" value="${esc(cfg[k])}"></div>`).join('')
