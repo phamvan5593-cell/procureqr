@@ -18,6 +18,7 @@ function menuSetup() {
 }
 
 function setupSheets_() {
+  SpreadsheetApp.getActiveSpreadsheet().setSpreadsheetTimeZone(TZ);
   Object.keys(SCHEMA).forEach(function (name) { ensureSheet_(name); });
   var cfg = readTable_('CauHinh');
   CONFIG_KEYS.forEach(function (k) {

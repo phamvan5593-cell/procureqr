@@ -34,7 +34,7 @@ function makeSheet(name) {
 
 const sheets = {};
 const ss = {
-  getName: () => 'ProcureQR TEST mock',
+  getName: () => 'ProcureQR TEST mock', setSpreadsheetTimeZone: () => {},
   getSheetByName: n => sheets[n] || null,
   insertSheet: n => (sheets[n] = makeSheet(n)),
   getSheets: () => Object.values(sheets)
