@@ -59,7 +59,7 @@
 
   <!-- TAB PR -->
   <section id="tab-pr" class="tab-content">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
       <div class="card">
         <h2 class="font-bold mb-4"><i class="fa-solid fa-file-pen text-blue-600"></i> Tạo phiếu đề xuất (PR)</h2>
         <form id="prForm" class="space-y-3" onsubmit="submitPR(event)">
@@ -89,7 +89,7 @@
           <button class="btn w-full justify-center bg-blue-800 hover:bg-blue-700 text-white py-2.5"><i class="fa-solid fa-paper-plane"></i> Gửi phiếu đề xuất</button>
         </form>
       </div>
-      <div class="card lg:col-span-2" id="prListCard">
+      <div class="card xl:col-span-2" id="prListCard">
         <div class="flex flex-wrap gap-2 justify-between items-center mb-3">
           <h2 class="font-bold"><i class="fa-solid fa-list-check"></i> Danh sách phiếu đề xuất</h2>
           <div class="flex gap-2 items-center">
@@ -100,7 +100,7 @@
           </div>
         </div>
         <div class="overflow-x-auto"><table class="tbl"><thead><tr>
-          <th>Mã PR</th><th>Ngày / Người ĐX</th><th>Khách hàng / Máy</th><th>Vật tư</th><th class="text-center">SL / Tồn</th><th>Bảo hành</th><th class="min-w-[170px]">Trạng thái / Thao tác</th>
+          <th>Mã PR</th><th>Vật tư · Khách hàng / Máy</th><th>Bảo hành</th><th>Trạng thái / Thao tác</th>
         </tr></thead><tbody id="prBody"></tbody></table></div>
       </div>
     </div>
@@ -555,14 +555,15 @@ function renderPR() {
     const kq = r['Kết Quả BG'] ? `<div class="text-[11px] text-slate-600">${esc(r['Kết Quả BG'])}</div>` : '';
     const typeC = { 'Bảo hành': 'bg-cyan-100 text-cyan-800', 'Sửa chữa tính phí': 'bg-orange-100 text-orange-800', 'Mua dự trữ kho': 'bg-slate-200 text-slate-700' }[r['Loại']] || 'bg-slate-100';
     return `<tr class="hover:bg-slate-50">
-      <td class="font-semibold text-blue-900 whitespace-nowrap">${id}${r['Mã PO'] ? `<div class="text-[11px] text-emerald-700">${esc(r['Mã PO'])}</div>` : ''}${r['Loại'] ? `<div><span class="pill ${typeC}">${esc(r['Loại'])}</span></div>` : ''}</td>
-      <td class="whitespace-nowrap">${fmtDate(r['Ngày Tạo'])}<div class="text-xs text-slate-500">${esc(r['Người Đề Xuất'])}</div></td>
-      <td><div class="text-xs font-semibold">${esc(r['Khách Hàng'])}</div><div class="text-xs text-slate-500">${esc(r['Tên Máy'])}</div></td>
-      <td>${esc(r['Tên Vật Tư'])}<div class="text-xs font-mono text-slate-400">${esc(r['Mã Part'])}</div><div class="text-xs text-slate-500 italic">${esc(r['Lý Do'])}</div></td>
-      <td class="text-center"><b>${esc(r['Số Lượng'])}</b><div class="text-[11px] ${stock > 0 ? 'text-emerald-700' : 'text-red-600'}">tồn ${stock}</div></td>
-      <td class="max-w-[180px]">${warrantyPill(r['Tình Trạng BH'])}<div class="text-[11px] text-slate-500">${esc(r['Chi Tiết BH'])}</div></td>
-      <td>${pill(st)}${appr}${bg}${kq}${act ? `<div class="flex flex-wrap gap-1 mt-2">${act}</div>` : ""}</td></tr>`;
-  }).join('') || '<tr><td colspan="7" class="text-center text-slate-400 py-6">Chưa có phiếu đề xuất</td></tr>';
+      <td class="whitespace-nowrap"><div class="font-semibold text-blue-900">${id}</div>${r['Loại'] ? `<span class="pill ${typeC}">${esc(r['Loại'])}</span>` : ''}
+        <div class="text-xs text-slate-500 mt-1">${fmtDate(r['Ngày Tạo'])} · ${esc(r['Người Đề Xuất'])}</div>${r['Mã PO'] ? `<div class="text-[11px] text-emerald-700">${esc(r['Mã PO'])}</div>` : ''}</td>
+      <td class="min-w-[200px]"><div class="font-medium">${esc(r['Tên Vật Tư'])} <span class="text-xs font-mono text-slate-400">${esc(r['Mã Part'])}</span></div>
+        <div class="text-xs">SL <b>${esc(r['Số Lượng'])}</b> · <span class="${stock > 0 ? 'text-emerald-700' : 'text-red-600'}">tồn kho ${stock}</span></div>
+        <div class="text-xs mt-1"><b>${esc(r['Khách Hàng'])}</b>${r['Tên Máy'] ? ' – ' + esc(r['Tên Máy']) : ''}</div>
+        <div class="text-xs text-slate-500 italic">${esc(r['Lý Do'])}</div></td>
+      <td class="min-w-[150px]">${warrantyPill(r['Tình Trạng BH'])}<div class="text-[11px] text-slate-500">${esc(r['Chi Tiết BH'])}</div></td>
+      <td class="min-w-[170px]">${pill(st)}${appr}${bg}${kq}${act ? `<div class="flex flex-wrap gap-1 mt-2">${act}</div>` : ''}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" class="text-center text-slate-400 py-6">Chưa có phiếu đề xuất</td></tr>';
 }
 async function submitPR(e) {
   e.preventDefault();
