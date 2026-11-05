@@ -44,7 +44,7 @@ const ctx = {
   console,
   SpreadsheetApp: { getActiveSpreadsheet: () => ss, flush: () => {}, getUi: () => ({ alert() {} }), BorderStyle: {} },
   Utilities: {
-    formatDate: (d, tz, f) => String(d.getFullYear()),
+    formatDate: (d, tz, f) => f === 'yyyy' ? String(d.getFullYear()) : d.toISOString().slice(0, 10),
     getUuid: () => crypto.randomUUID(),
     DigestAlgorithm: { SHA_256: 'sha256' }, Charset: { UTF_8: 'utf8' },
     computeDigest: (alg, s) => [...crypto.createHash('sha256').update(s, 'utf8').digest()].map(b => (b > 127 ? b - 256 : b)),
@@ -75,14 +75,23 @@ const T = n => vm.runInContext(`readTable_('${n}').rows`, ctx);
 console.log('1) Tạo dữ liệu mẫu');
 vm.runInContext('seedDemo_()', ctx);
 check('Danh mục có 8 vật tư', T('DanhMucVatTu').length === 8);
-check('PR có 5 phiếu', T('PR').length === 5);
+check('PR có 6 phiếu', T('PR').length === 6);
+check('Có 3 khách hàng, 4 máy', T('KhachHang').length === 3 && T('MayKhachHang').length === 4);
+const prs = T('PR');
+check('PR cảm biến máy thổi (thay 3 tháng trước, BH 12T) = Còn BH linh kiện', prs[0]['Tình Trạng BH'] === 'Còn BH linh kiện');
+check('PR dây curoa máy mới bàn giao 4 tháng (BH máy 24T) = Còn BH máy', prs[2]['Tình Trạng BH'] === 'Còn BH máy');
+check('PR van máy dập VAB (máy hết BH, chưa thay) = Hết BH', prs[3]['Tình Trạng BH'] === 'Hết BH');
+check('PR mua dự trữ không kiểm BH', prs[4]['Tình Trạng BH'] === '');
+check('PR cảm biến Lộc Trời (lắp 9 tháng trước, BH 6T) = Hết BH và Chờ báo giá KH', prs[5]['Tình Trạng BH'] === 'Hết BH' && prs[5]['Trạng Thái'] === 'Chờ báo giá KH');
+check('PR lưu tồn kho lúc đề xuất', prs[5]['Tồn Lúc Đề Xuất'] === 2);
 check('Mã PR dạng PR-yyyy-0001', /^PR-\d{4}-0001$/.test(T('PR')[0]['Mã PR']));
 check('Có 2 PO', T('PO').length === 2);
 const po1 = T('PO')[0];
 check('PO1 nhận 1 phần', po1['Trạng Thái'] === 'Nhận 1 phần');
 check('PO1 tổng tiền = 2*1.250.000 + 980.000', po1['Tổng Tiền'] === 3480000);
 const ton = Object.fromEntries(T('TonKho').map(r => [r['Mã Part'], r['Tồn Kho']]));
-check('Tồn CB-E3Z-D61 = 2 nhập - 1 xuất = 1', ton['CB-E3Z-D61'] === 1);
+check('Tồn CB-E3Z-D61 = 1 - 1 + 2 - 1 = 1', ton['CB-E3Z-D61'] === 1);
+check('Tồn CB-E2E-X5ME1 = 3 - 1 = 2', ton['CB-E2E-X5ME1'] === 2);
 check('Tồn BD-6204-2RS = 12 - 2 = 10', ton['BD-6204-2RS'] === 10);
 check('Tồn CC-10A = 30 - 5 = 25', ton['CC-10A'] === 25);
 check('PR bị từ chối có ghi chú', T('PR').some(r => r['Trạng Thái'] === 'Từ Chối' && r['Ghi Chú Duyệt']));
@@ -98,7 +107,7 @@ check('Đăng nhập đúng PIN có token', !!tv && !!th);
 const pub = post('getData', {});
 check('Chưa đăng nhập: không thấy PO / giá', pub.ok && pub.data.po === undefined && pub.data.invoices === undefined);
 check('Chưa đăng nhập: thấy PR và tồn kho', pub.data.pr.length >= 5 && pub.data.stock.length === 8);
-check('Không đăng nhập: tạo PR được nếu ghi tên', post('savePR', { partNo: 'CC-10A', qty: 1, reason: 'x', requester: 'Tuấn – Kỹ thuật' }).ok);
+check('Không đăng nhập: tạo PR được nếu ghi tên', post('savePR', { partNo: 'CC-10A', qty: 1, reason: 'x', requester: 'Tuấn – Kỹ thuật', customer: 'Khách lẻ', machine: 'Máy X' }).ok);
 check('Không đăng nhập: thiếu tên người đề xuất bị chặn', post('savePR', { partNo: 'CC-10A', qty: 1, reason: 'x' }).ok === false);
 check('Không đăng nhập: không tạo PO được', post('createPO', { supplier: 'x', items: [] }).ok === false);
 check('Không đăng nhập: không duyệt được', post('approvePR', { id: 'PR-x' }).ok === false);
@@ -126,10 +135,25 @@ check('Sửa giá khi chờ phát hành', post('updatePOItem', { poId: c.data.id
 check('Tổng tiền cập nhật = 8000', T('PO').find(p => p['Mã PO'] === c.data.id)['Tổng Tiền'] === 8000);
 check('Hủy PO trả PR về Đã Duyệt', post('setPOStatus', { id: c.data.id, status: 'Đã hủy' }, tv).ok && T('PR').find(r => r['Mã PR'] === pr6)['Trạng Thái'] === 'Đã Duyệt');
 
+console.log('4b) Bảo hành & báo giá');
+const wq = post('checkWarranty', { machineId: T('MayKhachHang')[3]['Mã Máy'], partNo: 'CB-E2E-X5ME1' });
+check('Tra BH không cần đăng nhập', wq.ok && wq.data.status === 'Hết BH');
+const pubD = post('getData', {}).data;
+check('Không đăng nhập: danh sách KH không có SĐT', pubD.customers.length === 3 && pubD.customers[0]['SĐT/Zalo'] === undefined);
+check('Không đăng nhập: có lịch sử lắp để tra BH', pubD.warranty.length >= 4 && pubD.warranty[0]['Đơn Giá VAT'] === undefined);
+const q = prs[5]['Mã PR'];
+check('Báo KH kết quả trước khi gửi BG bị chặn', post('quoteResult', { id: q, accepted: true }, tv).ok === false);
+check('Ghi nhận đã gửi báo giá', post('quoteSent', { id: q, quoteNo: 'BG-001' }, tv).ok && T('PR')[5]['Trạng Thái'] === 'Đã gửi báo giá');
+check('KH đồng ý → Đã Duyệt, loại Sửa chữa tính phí', post('quoteResult', { id: q, accepted: true, note: 'OK qua Zalo' }, tv).ok && T('PR')[5]['Trạng Thái'] === 'Đã Duyệt' && T('PR')[5]['Loại'] === 'Sửa chữa tính phí');
+check('Xuất kho theo PR đã duyệt → PR Đã xuất kho', post('issueStock', { partNo: 'CB-E2E-X5ME1', qty: 1, machineId: T('MayKhachHang')[3]['Mã Máy'], warrantyMonths: 6, prId: q }, tv).ok && T('PR')[5]['Trạng Thái'] === 'Đã xuất kho');
+const wq2 = post('checkWarranty', { machineId: T('MayKhachHang')[3]['Mã Máy'], partNo: 'CB-E2E-X5ME1' });
+check('Sau khi thay mới, tra lại = Còn BH linh kiện', wq2.data.status === 'Còn BH linh kiện');
+check('PR thiếu khách hàng (không phải dự trữ) bị chặn', post('savePR', { type: 'Bảo hành', partNo: 'CC-10A', qty: 1, reason: 'x', requester: 'A' }).ok === false);
+
 console.log('5) Đọc/ghi theo tên cột (chèn cột lạ vào giữa)');
 const prSh = sheets['PR'];
 prSh.data.forEach((row, i) => row.splice(2, 0, i === 0 ? 'Cột Chèn Thêm' : 'zz'));
-const r2 = post('savePR', { partNo: 'CC-10A', qty: 1, reason: 'Sau khi chèn cột' }, tv);
+const r2 = post('savePR', { type: 'Mua dự trữ kho', partNo: 'CC-10A', qty: 1, reason: 'Sau khi chèn cột' }, tv);
 const last = T('PR').find(r => r['Mã PR'] === r2.data.id);
 check('Sau khi chèn cột, PR mới vẫn đúng cột', r2.ok && last['Lý Do'] === 'Sau khi chèn cột' && last['Tên Vật Tư'] === 'Cầu chì ống 10A');
 

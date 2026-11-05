@@ -86,20 +86,35 @@ function seedDemo_() {
 
   // Tồn đầu kỳ
   receiveStock_({ items: [
-    { partNo: 'CB-E2E-X5ME1', qty: 3 }, { partNo: 'BD-6204-2RS', qty: 12 }, { partNo: 'RL-MY2N-24VDC', qty: 6 },
+    { partNo: 'CB-E2E-X5ME1', qty: 3 }, { partNo: 'CB-E3Z-D61', qty: 1 }, { partNo: 'BD-6204-2RS', qty: 12 }, { partNo: 'RL-MY2N-24VDC', qty: 6 },
     { partNo: 'CC-10A', qty: 30 }, { partNo: 'DC-B52', qty: 2 }
   ], note: 'Tồn đầu kỳ (dữ liệu mẫu)' }, vanUser);
 
+  // Khách hàng & máy đã bán (tên giả định)
+  var kh1 = saveCustomer_({ name: 'Cty Chất Lượng – Xưởng A (mẫu)', contact: 'Anh Bình', phone: '0900000011' }, vanUser).id;
+  var kh2 = saveCustomer_({ name: 'Cty CP SX VAB (mẫu)', contact: 'Chị Hạnh', phone: '0900000012' }, vanUser).id;
+  var kh3 = saveCustomer_({ name: 'Cty Lộc Trời (mẫu)', contact: 'Anh Dũng', phone: '0900000013' }, vanUser).id;
+  var m1 = saveMachine_({ customerId: kh1, name: 'Máy thổi tuýp số 2', model: 'TB-200', serial: 'SN2401', handoverDate: monthsAgo_(30), warrantyMonths: 12 }, vanUser).id;
+  var m2 = saveMachine_({ customerId: kh2, name: 'Dây chuyền chai nhôm 1', model: 'AL-500', serial: 'SN2512', handoverDate: monthsAgo_(4), warrantyMonths: 24 }, vanUser).id;
+  var m3 = saveMachine_({ customerId: kh2, name: 'Máy dập 3', model: 'DP-80', serial: 'SN2203', handoverDate: monthsAgo_(40), warrantyMonths: 12 }, vanUser).id;
+  var m4 = saveMachine_({ customerId: kh3, name: 'Máy dập 3', model: 'DP-80', serial: 'SN2310', handoverDate: monthsAgo_(26), warrantyMonths: 12 }, vanUser).id;
+
+  // Lịch sử lắp linh kiện cũ (để thử tra bảo hành)
+  backdate_(issueStock_({ partNo: 'CB-E2E-X5ME1', qty: 1, machineId: m4, warrantyMonths: 6, note: 'Lắp lần trước (mẫu)' }, thuyUser).id, 9);
+  backdate_(issueStock_({ partNo: 'CB-E3Z-D61', qty: 1, machineId: m1, warrantyMonths: 12, note: 'Lắp lần trước (mẫu)' }, thuyUser).id, 3);
+
   // PR → duyệt → PO → nhận hàng một phần
-  var p1 = savePR_({ partNo: 'CB-E3Z-D61', qty: 2, customer: 'Cty Chất Lượng – Xưởng A', machine: 'Máy thổi tuýp số 2', reason: 'Cảm biến báo lỗi chập chờn' }, thuyUser).id;
-  var p2 = savePR_({ partNo: 'XL-CDJ2B16-50', qty: 1, customer: 'Cty Chất Lượng – Xưởng A', machine: 'Máy thổi tuýp số 2', reason: 'Xi lanh xì hơi' }, thuyUser).id;
-  var p3 = savePR_({ partNo: 'DC-B52', qty: 4, customer: 'VAB', machine: 'Dây chuyền chai nhôm 1', reason: 'Dự phòng thay định kỳ' }, vanUser).id;
-  savePR_({ partNo: 'VA-SY5120', qty: 1, customer: 'VAB', machine: 'Máy dập 3', reason: 'Van kẹt, cần thay' }, vanUser);
-  var p5 = savePR_({ partNo: 'CC-10A', qty: 100, customer: 'SHL', machine: 'Kho', reason: 'Mua dự trữ' }, vanUser).id;
+  var p1 = savePR_({ type: 'Sửa chữa tính phí', partNo: 'CB-E3Z-D61', qty: 2, machineId: m1, reason: 'Cảm biến báo lỗi chập chờn' }, thuyUser).id;
+  var p2 = savePR_({ type: 'Sửa chữa tính phí', partNo: 'XL-CDJ2B16-50', qty: 1, machineId: m1, reason: 'Xi lanh xì hơi' }, thuyUser).id;
+  var p3 = savePR_({ type: 'Bảo hành', partNo: 'DC-B52', qty: 4, machineId: m2, reason: 'Dây curoa mòn, máy còn bảo hành' }, vanUser).id;
+  savePR_({ type: 'Bảo hành', partNo: 'VA-SY5120', qty: 1, machineId: m3, reason: 'Van kẹt, cần thay' }, vanUser);
+  var p5 = savePR_({ type: 'Mua dự trữ kho', partNo: 'CC-10A', qty: 100, reason: 'Mua dự trữ' }, vanUser).id;
+  var p6 = savePR_({ type: 'Bảo hành', partNo: 'CB-E2E-X5ME1', qty: 1, machineId: m4, reason: 'Khách báo cảm biến hư, đề nghị bảo hành', requester: 'Nguyễn Văn A' }, null).id;
   approvePR_({ id: p1 }, hoang);
   approvePR_({ id: p2 }, hoang);
   approvePR_({ id: p3 }, hoang);
   rejectPR_({ id: p5, note: 'Tồn còn nhiều, chưa cần mua' }, hoang);
+  toQuotePR_({ id: p6, note: 'Cảm biến hết BH linh kiện, máy hết BH – báo giá khách' }, hoang);
 
   var po1 = createPO_({ supplier: 'Cty TNHH Thiết Bị Tự Động Minh Phát (mẫu)', items: [
     { prId: p1, qty: 2, price: 1250000 }, { prId: p2, qty: 1, price: 980000 }
@@ -110,12 +125,25 @@ function seedDemo_() {
   var po2 = createPO_({ supplier: 'Cửa hàng Vòng Bi Sài Gòn (mẫu)', items: [{ prId: p3, qty: 6, price: 85000 }] }, vanUser).id;
 
   // Xuất kho bảo trì
-  issueStock_({ partNo: 'BD-6204-2RS', qty: 2, customer: 'VAB', machine: 'Dây chuyền chai nhôm 1', warrantyMonths: 6 }, thuyUser);
-  issueStock_({ partNo: 'CB-E3Z-D61', qty: 1, customer: 'Cty Chất Lượng – Xưởng A', machine: 'Máy thổi tuýp số 2', warrantyMonths: 12 }, thuyUser);
-  issueStock_({ partNo: 'CC-10A', qty: 5, customer: 'Cty Chất Lượng – Xưởng B', machine: 'Máy chiết rót BVTV', warrantyMonths: 0 }, vanUser);
+  issueStock_({ partNo: 'BD-6204-2RS', qty: 2, machineId: m2, warrantyMonths: 6 }, thuyUser);
+  issueStock_({ partNo: 'CB-E3Z-D61', qty: 1, machineId: m1, warrantyMonths: 12 }, thuyUser);
+  issueStock_({ partNo: 'CC-10A', qty: 5, customer: 'Khách lẻ – sửa tại xưởng', machine: 'Máy chiết rót BVTV', warrantyMonths: 0 }, vanUser);
 
   saveInvoice_({ poId: po1, invoiceNo: '0001234 (mẫu)', amount: 3480000 }, vanUser);
   return { po: [po1, po2] };
+}
+
+function monthsAgo_(n) {
+  var d = new Date(); d.setMonth(d.getMonth() - n); return d;
+}
+
+/** Lùi thời gian một phiếu xuất (chỉ dùng cho dữ liệu mẫu) */
+function backdate_(xkId, months) {
+  var r = requireRow_('SoKho', 'Mã Phiếu', xkId);
+  var t = monthsAgo_(months);
+  var exp = '';
+  if (num_(r['Số Tháng BH']) > 0) { exp = new Date(t); exp.setMonth(exp.getMonth() + num_(r['Số Tháng BH'])); }
+  updateRow_('SoKho', r._row, { 'Thời Gian': t, 'Hạn BH': exp });
 }
 
 /** Giữ lại từ taosheet.gs cũ */

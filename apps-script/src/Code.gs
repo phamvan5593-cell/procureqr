@@ -18,14 +18,19 @@ var SCHEMA = {
   CauHinh:      ['Khóa', 'Giá Trị'],
   DanhMucVatTu: ['Mã Part', 'Tên Vật Tư', 'Đơn Vị Tính', 'Nhóm', 'Tồn Tối Thiểu', 'Ghi Chú'],
   NhaCungCap:   ['Mã NCC', 'Tên NCC', 'Người Liên Hệ', 'SĐT/Zalo', 'MST', 'Địa Chỉ'],
-  PR:           ['Mã PR', 'Ngày Tạo', 'Người Đề Xuất', 'Khách Hàng', 'Tên Máy', 'Mã Part', 'Tên Vật Tư',
-                 'Số Lượng', 'Lý Do', 'Trạng Thái', 'Người Duyệt', 'Thời Gian Duyệt', 'Ghi Chú Duyệt',
-                 'Mã PO', 'Người Tạo'],
+  KhachHang:    ['Mã KH', 'Tên KH', 'Người Liên Hệ', 'SĐT/Zalo', 'MST', 'Địa Chỉ', 'Ghi Chú'],
+  MayKhachHang: ['Mã Máy', 'Mã KH', 'Tên KH', 'Tên Máy', 'Model', 'Số Serial', 'Ngày Bàn Giao',
+                 'Số Tháng BH Máy', 'Hạn BH Máy', 'Ghi Chú'],
+  PR:           ['Mã PR', 'Ngày Tạo', 'Người Đề Xuất', 'Loại', 'Mã KH', 'Khách Hàng', 'Mã Máy', 'Tên Máy',
+                 'Mã Part', 'Tên Vật Tư', 'Số Lượng', 'Lý Do', 'Tình Trạng BH', 'Chi Tiết BH', 'Tồn Lúc Đề Xuất',
+                 'Trạng Thái', 'Người Duyệt', 'Thời Gian Duyệt', 'Ghi Chú Duyệt',
+                 'Số Báo Giá', 'Ngày Gửi BG', 'Kết Quả BG', 'Mã PO', 'Người Tạo'],
   PO:           ['Mã PO', 'Ngày Tạo', 'Nhà Cung Cấp', 'Tổng Tiền', 'Trạng Thái', 'Ngày Phát Hành',
                  'Ghi Chú', 'Người Tạo'],
   PO_ChiTiet:   ['Mã PO', 'Mã PR', 'Mã Part', 'Tên Vật Tư', 'SL Đặt', 'Đơn Giá VAT', 'Thành Tiền', 'SL Đã Nhận'],
   SoKho:        ['Mã Phiếu', 'Thời Gian', 'Loại', 'Mã Part', 'Tên Vật Tư', 'Số Lượng', 'Mã PO',
-                 'Khách Hàng', 'Tên Máy', 'Số Tháng BH', 'Hạn BH', 'Người Thực Hiện', 'Ghi Chú', 'Người Nhập Liệu'],
+                 'Mã KH', 'Khách Hàng', 'Mã Máy', 'Tên Máy', 'Số Tháng BH', 'Hạn BH', 'Mã PR',
+                 'Người Thực Hiện', 'Ghi Chú', 'Người Nhập Liệu'],
   TonKho:       ['Mã Part', 'Tên Vật Tư', 'Đơn Vị Tính', 'Tồn Kho', 'Tồn Tối Thiểu', 'Cập Nhật Cuối'],
   HoaDon:       ['Mã PO', 'Số Hóa Đơn', 'Nhà Cung Cấp', 'Tổng Tiền', 'Ngày Nhận HĐ', 'Tên File', 'Link File',
                  'Trạng Thái Thanh Toán', 'Ngày Thanh Toán', 'Người Cập Nhật']
@@ -40,7 +45,10 @@ var USERS = [
   { id: 'hoang', name: 'Anh Hoàng', role: 'manager' }
 ];
 
-var PR_STATUS = { WAIT: 'Chờ Duyệt', OK: 'Đã Duyệt', REJECT: 'Từ Chối', ORDERED: 'Đã Đặt Hàng', DONE: 'Đã Nhận Hàng' };
+var PR_STATUS = { WAIT: 'Chờ Duyệt', OK: 'Đã Duyệt', REJECT: 'Từ Chối', ORDERED: 'Đã Đặt Hàng', DONE: 'Đã Nhận Hàng',
+                  QUOTE: 'Chờ báo giá KH', QUOTE_SENT: 'Đã gửi báo giá', QUOTE_NO: 'KH không đồng ý', ISSUED: 'Đã xuất kho' };
+var PR_TYPES = ['Bảo hành', 'Sửa chữa tính phí', 'Mua dự trữ kho'];
+var WARRANTY = { PART: 'Còn BH linh kiện', MACHINE: 'Còn BH máy', EXPIRED: 'Hết BH', NONE: 'Chưa có lịch sử', NA: '' };
 var PO_STATUS = { DRAFT: 'Chờ phát hành', SENT: 'Đã phát hành', PART: 'Nhận 1 phần', DONE: 'Đã nhận đủ', CANCEL: 'Đã hủy' };
 
 // ===================== ĐIỂM VÀO WEB APP =====================
@@ -87,7 +95,14 @@ var ACTIONS = {
   savePR:        { fn: savePR_, role: 'public' }, // nhân viên không cần đăng nhập vẫn tạo được PR
   approvePR:     { fn: approvePR_, role: 'manager' },
   rejectPR:      { fn: rejectPR_,  role: 'manager' },
+  toQuotePR:     { fn: toQuotePR_, role: 'manager' },
+  quoteSent:     { fn: quoteSent_ },
+  quoteResult:   { fn: quoteResult_ },
   deletePR:      { fn: deletePR_ },
+  checkWarranty: { fn: checkWarranty_, role: 'public' },
+  saveCustomer:  { fn: saveCustomer_ },
+  saveMachine:   { fn: saveMachine_ },
+  resetDemo:     { fn: resetDemo_, role: 'manager' }, // chỉ chạy được trên bản TEST
   createPO:      { fn: createPO_ },
   updatePOItem:  { fn: updatePOItem_ },
   setPOStatus:   { fn: setPOStatus_ },
@@ -109,14 +124,26 @@ function getData_(user) {
     config: readConfig_(),
     items: readTable_('DanhMucVatTu').rows,
     stock: readTable_('TonKho').rows,
-    pr: readTable_('PR').rows
+    pr: readTable_('PR').rows,
+    prTypes: PR_TYPES
   };
-  // Người chỉ xem (chưa đăng nhập): chỉ thấy PR, danh mục, tồn kho.
+  var customers = readTable_('KhachHang').rows;
+  var machines = readTable_('MayKhachHang').rows;
+  var ledger = readTable_('SoKho').rows;
+  // Người chỉ xem (chưa đăng nhập): PR, danh mục, tồn kho, danh sách KH/máy (không SĐT, địa chỉ)
+  // và lịch sử lắp linh kiện để tra bảo hành (không có giá).
+  out.customers = customers.map(function (c) { return { 'Mã KH': c['Mã KH'], 'Tên KH': c['Tên KH'] }; });
+  out.machines = machines;
+  out.warranty = ledger.filter(function (r) { return r['Loại'] === 'XUẤT'; }).map(function (r) {
+    return pick_(r, ['Mã Phiếu', 'Thời Gian', 'Mã Part', 'Tên Vật Tư', 'Số Lượng', 'Mã KH', 'Khách Hàng', 'Mã Máy',
+                     'Tên Máy', 'Số Tháng BH', 'Hạn BH', 'Người Thực Hiện']);
+  });
   if (user) {
+    out.customers = customers;
     out.suppliers = readTable_('NhaCungCap').rows;
     out.po = readTable_('PO').rows;
     out.poItems = readTable_('PO_ChiTiet').rows;
-    out.ledger = readTable_('SoKho').rows;
+    out.ledger = ledger;
     out.invoices = readTable_('HoaDon').rows;
   }
   return out;
@@ -170,23 +197,168 @@ function hash_(s) {
 function savePR_(d, user) {
   var item = requireItem_(d.partNo);
   var qty = positiveNumber_(d.qty, 'Số lượng');
+  var type = str_(d.type) || PR_TYPES[0];
+  if (PR_TYPES.indexOf(type) < 0) throw new Error('Loại đề xuất không hợp lệ.');
   if (!str_(d.reason)) throw new Error('Vui lòng nhập lý do đề xuất.');
   if (!user && !str_(d.requester)) throw new Error('Vui lòng ghi tên người đề xuất.');
+  var target = resolveTarget_(d);
+  if (type !== 'Mua dự trữ kho' && !target.customer) throw new Error('Vui lòng chọn khách hàng / máy.');
+  var w = type === 'Mua dự trữ kho' ? { status: WARRANTY.NA, detail: '' } : warrantyFor_(target.machineId, item['Mã Part'], target.customer, target.machine);
   var id = nextId_('PR', 'PR', 'Mã PR');
   appendRow_('PR', {
     'Mã PR': id,
     'Ngày Tạo': new Date(),
     'Người Đề Xuất': str_(d.requester) || user.name,
-    'Khách Hàng': str_(d.customer),
-    'Tên Máy': str_(d.machine),
+    'Loại': type,
+    'Mã KH': target.customerId,
+    'Khách Hàng': target.customer,
+    'Mã Máy': target.machineId,
+    'Tên Máy': target.machine,
     'Mã Part': item['Mã Part'],
     'Tên Vật Tư': item['Tên Vật Tư'],
     'Số Lượng': qty,
     'Lý Do': str_(d.reason),
+    'Tình Trạng BH': w.status,
+    'Chi Tiết BH': w.detail,
+    'Tồn Lúc Đề Xuất': stockOf_(item['Mã Part']),
     'Trạng Thái': PR_STATUS.WAIT,
     'Người Tạo': user ? user.name : '(nhân viên – không đăng nhập)'
   });
-  return { id: id };
+  return { id: id, warranty: w };
+}
+
+/** Từ chọn máy trong danh sách (machineId) hoặc chữ tự gõ → mã/tên KH và máy. */
+function resolveTarget_(d) {
+  var t = { customerId: '', customer: str_(d.customer), machineId: '', machine: str_(d.machine) };
+  if (str_(d.machineId)) {
+    var m = findIn_(readTable_('MayKhachHang').rows, 'Mã Máy', d.machineId);
+    if (!m) throw new Error('Không tìm thấy máy ' + d.machineId);
+    t.machineId = m['Mã Máy']; t.machine = m['Tên Máy'] + (m['Số Serial'] ? ' (S/N ' + m['Số Serial'] + ')' : '');
+    t.customerId = m['Mã KH']; t.customer = m['Tên KH'];
+  } else if (str_(d.customerId)) {
+    var c = findIn_(readTable_('KhachHang').rows, 'Mã KH', d.customerId);
+    if (c) { t.customerId = c['Mã KH']; t.customer = c['Tên KH']; }
+  }
+  return t;
+}
+
+// ===================== BẢO HÀNH =====================
+function checkWarranty_(d) {
+  var t = resolveTarget_(d);
+  return warrantyFor_(t.machineId, str_(d.partNo).toUpperCase(), t.customer, t.machine);
+}
+
+/**
+ * Kiểm tra bảo hành của 1 linh kiện trên 1 máy:
+ *  1. Lần gần nhất xuất kho đúng mã linh kiện đó cho đúng máy đó còn hạn BH → Còn BH linh kiện
+ *  2. Không thì nếu bản thân máy còn hạn BH máy → Còn BH máy
+ *  3. Có lịch sử nhưng hết hạn → Hết BH;  không có gì → Chưa có lịch sử
+ */
+function warrantyFor_(machineId, partNo, customer, machineName) {
+  var now = new Date();
+  var norm = function (s) { return str_(s).toLowerCase().replace(/\s+/g, ' '); };
+  var issues = readTable_('SoKho').rows.filter(function (r) {
+    if (r['Loại'] !== 'XUẤT' || r['Mã Part'] !== partNo) return false;
+    if (machineId) return r['Mã Máy'] === machineId;
+    return customer && norm(r['Khách Hàng']) === norm(customer) && norm(r['Tên Máy']) === norm(machineName);
+  }).sort(function (a, b) { return String(b['Thời Gian']).localeCompare(String(a['Thời Gian'])); });
+  var last = issues[0];
+  if (last && num_(last['Số Tháng BH']) > 0 && new Date(last['Hạn BH']) >= now) {
+    return { status: WARRANTY.PART, detail: 'Lắp ' + fmt_(last['Thời Gian']) + ' (' + last['Mã Phiếu'] + '), BH ' + last['Số Tháng BH'] + ' tháng, hạn ' + fmt_(last['Hạn BH']), last: last };
+  }
+  var m = machineId ? findIn_(readTable_('MayKhachHang').rows, 'Mã Máy', machineId) : null;
+  if (m && m['Hạn BH Máy'] && new Date(m['Hạn BH Máy']) >= now) {
+    return { status: WARRANTY.MACHINE, detail: 'Máy bàn giao ' + fmt_(m['Ngày Bàn Giao']) + ', BH máy tới ' + fmt_(m['Hạn BH Máy']), last: last || null };
+  }
+  if (last) {
+    var why = num_(last['Số Tháng BH']) > 0 ? 'hết hạn ' + fmt_(last['Hạn BH']) : 'lần lắp trước không bảo hành';
+    return { status: WARRANTY.EXPIRED, detail: 'Lắp ' + fmt_(last['Thời Gian']) + ' (' + last['Mã Phiếu'] + '), ' + why
+             + (m && m['Hạn BH Máy'] ? '; BH máy hết ' + fmt_(m['Hạn BH Máy']) : ''), last: last };
+  }
+  if (m && m['Hạn BH Máy']) return { status: WARRANTY.EXPIRED, detail: 'Chưa thay linh kiện này; BH máy đã hết ' + fmt_(m['Hạn BH Máy']), last: null };
+  return { status: WARRANTY.NONE, detail: machineId ? 'Chưa từng lắp linh kiện này cho máy này' : 'Máy chưa có trong danh sách – không đối chiếu được', last: null };
+}
+
+function fmt_(v) {
+  if (!v) return '';
+  return Utilities.formatDate(new Date(v), TZ, 'dd/MM/yyyy');
+}
+
+// ===================== KHÁCH HÀNG & MÁY =====================
+function saveCustomer_(d, user) {
+  var name = str_(d.name);
+  if (!name) throw new Error('Vui lòng nhập tên khách hàng.');
+  var t = readTable_('KhachHang');
+  var dup = t.rows.filter(function (r) { return str_(r['Tên KH']).toLowerCase() === name.toLowerCase() && r['Mã KH'] !== d.id; })[0];
+  if (dup) throw new Error('Khách hàng "' + name + '" đã có (' + dup['Mã KH'] + ').');
+  var obj = { 'Tên KH': name, 'Người Liên Hệ': str_(d.contact), 'SĐT/Zalo': str_(d.phone), 'MST': str_(d.tax),
+              'Địa Chỉ': str_(d.address), 'Ghi Chú': str_(d.note) };
+  var existing = d.id ? findIn_(t.rows, 'Mã KH', d.id) : null;
+  if (existing) {
+    updateRow_('KhachHang', existing._row, obj);
+    // đồng bộ tên KH sang danh sách máy
+    readTable_('MayKhachHang').rows.forEach(function (m) { if (m['Mã KH'] === d.id) updateRow_('MayKhachHang', m._row, { 'Tên KH': name }); });
+    return { id: d.id };
+  }
+  obj['Mã KH'] = nextSimpleId_('KH', t.rows, 'Mã KH');
+  appendRow_('KhachHang', obj);
+  return { id: obj['Mã KH'] };
+}
+
+function saveMachine_(d, user) {
+  var c = findIn_(readTable_('KhachHang').rows, 'Mã KH', d.customerId);
+  if (!c) throw new Error('Vui lòng chọn khách hàng của máy.');
+  if (!str_(d.name)) throw new Error('Vui lòng nhập tên máy.');
+  var months = Number(d.warrantyMonths) || 0;
+  var handover = d.handoverDate ? new Date(d.handoverDate) : '';
+  var expire = '';
+  if (handover && months > 0) { expire = new Date(handover); expire.setMonth(expire.getMonth() + months); }
+  var obj = { 'Mã KH': c['Mã KH'], 'Tên KH': c['Tên KH'], 'Tên Máy': str_(d.name), 'Model': str_(d.model),
+              'Số Serial': str_(d.serial), 'Ngày Bàn Giao': handover, 'Số Tháng BH Máy': months, 'Hạn BH Máy': expire,
+              'Ghi Chú': str_(d.note) };
+  var t = readTable_('MayKhachHang');
+  var existing = d.id ? findIn_(t.rows, 'Mã Máy', d.id) : null;
+  if (existing) { updateRow_('MayKhachHang', existing._row, obj); return { id: d.id }; }
+  obj['Mã Máy'] = nextSimpleId_('MAY', t.rows, 'Mã Máy');
+  appendRow_('MayKhachHang', obj);
+  return { id: obj['Mã Máy'] };
+}
+
+function resetDemo_(d, user) {
+  if (!/TEST/i.test(SpreadsheetApp.getActiveSpreadsheet().getName())) throw new Error('Chỉ dùng trên bản TEST.');
+  return seedDemo_();
+}
+
+// ===================== PR HẾT BẢO HÀNH → BÁO GIÁ KHÁCH HÀNG =====================
+// Báo giá làm bên ngoài app; app chỉ theo dõi trạng thái.
+function toQuotePR_(d, user) {
+  var pr = requireRow_('PR', 'Mã PR', d.id);
+  if (pr['Trạng Thái'] !== PR_STATUS.WAIT) throw new Error('Phiếu ' + d.id + ' không ở trạng thái Chờ Duyệt.');
+  updateRow_('PR', pr._row, { 'Trạng Thái': PR_STATUS.QUOTE, 'Người Duyệt': user.name, 'Thời Gian Duyệt': new Date(),
+                              'Ghi Chú Duyệt': str_(d.note) || 'Hết bảo hành – báo giá khách hàng' });
+  return true;
+}
+
+function quoteSent_(d, user) {
+  var pr = requireRow_('PR', 'Mã PR', d.id);
+  if (pr['Trạng Thái'] !== PR_STATUS.QUOTE && pr['Trạng Thái'] !== PR_STATUS.QUOTE_SENT) throw new Error('Phiếu không ở bước báo giá.');
+  if (!str_(d.quoteNo)) throw new Error('Vui lòng nhập số báo giá.');
+  updateRow_('PR', pr._row, { 'Trạng Thái': PR_STATUS.QUOTE_SENT, 'Số Báo Giá': str_(d.quoteNo), 'Ngày Gửi BG': new Date() });
+  return true;
+}
+
+function quoteResult_(d, user) {
+  var pr = requireRow_('PR', 'Mã PR', d.id);
+  if (pr['Trạng Thái'] !== PR_STATUS.QUOTE_SENT) throw new Error('Phiếu chưa ghi nhận gửi báo giá.');
+  var note = str_(d.note);
+  if (d.accepted) {
+    updateRow_('PR', pr._row, { 'Trạng Thái': PR_STATUS.OK, 'Loại': 'Sửa chữa tính phí',
+                                'Kết Quả BG': 'KH đồng ý ' + Utilities.formatDate(new Date(), TZ, 'dd/MM/yyyy') + (note ? ' – ' + note : '') + ' (' + user.name + ')' });
+  } else {
+    updateRow_('PR', pr._row, { 'Trạng Thái': PR_STATUS.QUOTE_NO,
+                                'Kết Quả BG': 'KH không đồng ý ' + Utilities.formatDate(new Date(), TZ, 'dd/MM/yyyy') + (note ? ' – ' + note : '') + ' (' + user.name + ')' });
+  }
+  return true;
 }
 
 function approvePR_(d, user) {
@@ -210,8 +382,8 @@ function rejectPR_(d, user) {
 
 function deletePR_(d, user) {
   var pr = requireRow_('PR', 'Mã PR', d.id);
-  if (pr['Trạng Thái'] !== PR_STATUS.WAIT && pr['Trạng Thái'] !== PR_STATUS.REJECT) {
-    throw new Error('Chỉ xóa được phiếu Chờ Duyệt hoặc Từ Chối.');
+  if ([PR_STATUS.WAIT, PR_STATUS.REJECT, PR_STATUS.QUOTE_NO].indexOf(pr['Trạng Thái']) < 0) {
+    throw new Error('Chỉ xóa được phiếu Chờ Duyệt, Từ Chối hoặc KH không đồng ý.');
   }
   sheet_('PR').deleteRow(pr._row);
   return true;
@@ -346,8 +518,14 @@ function receiveStock_(d, user) {
 function issueStock_(d, user) {
   var item = requireItem_(d.partNo);
   var qty = positiveNumber_(d.qty, 'Số lượng xuất');
-  if (!str_(d.customer)) throw new Error('Vui lòng nhập khách hàng / công ty sử dụng.');
-  if (!str_(d.machine)) throw new Error('Vui lòng nhập tên máy / dây chuyền.');
+  var target = resolveTarget_(d);
+  if (!target.customer) throw new Error('Vui lòng chọn khách hàng / công ty sử dụng.');
+  if (!target.machine) throw new Error('Vui lòng chọn hoặc nhập tên máy / dây chuyền.');
+  var pr = null;
+  if (str_(d.prId)) {
+    pr = requireRow_('PR', 'Mã PR', d.prId);
+    if (pr['Trạng Thái'] !== PR_STATUS.OK && pr['Trạng Thái'] !== PR_STATUS.DONE) throw new Error('Phiếu ' + d.prId + ' chưa được duyệt.');
+  }
   var stock = stockOf_(item['Mã Part']);
   if (stock < qty) throw new Error('Tồn kho ' + item['Mã Part'] + ' chỉ còn ' + stock + ', không đủ xuất ' + qty + '.');
 
@@ -358,9 +536,11 @@ function issueStock_(d, user) {
   var id = nextId_('XK', 'SoKho', 'Mã Phiếu');
   appendRow_('SoKho', {
     'Mã Phiếu': id, 'Thời Gian': now, 'Loại': 'XUẤT', 'Mã Part': item['Mã Part'], 'Tên Vật Tư': item['Tên Vật Tư'],
-    'Số Lượng': qty, 'Khách Hàng': str_(d.customer), 'Tên Máy': str_(d.machine), 'Số Tháng BH': months,
-    'Hạn BH': expire, 'Người Thực Hiện': str_(d.performer) || user.name, 'Ghi Chú': str_(d.note), 'Người Nhập Liệu': user.name
+    'Số Lượng': qty, 'Mã KH': target.customerId, 'Khách Hàng': target.customer, 'Mã Máy': target.machineId,
+    'Tên Máy': target.machine, 'Số Tháng BH': months, 'Hạn BH': expire, 'Mã PR': pr ? pr['Mã PR'] : '',
+    'Người Thực Hiện': str_(d.performer) || user.name, 'Ghi Chú': str_(d.note), 'Người Nhập Liệu': user.name
   });
+  if (pr) updateRow_('PR', pr._row, { 'Trạng Thái': PR_STATUS.ISSUED });
   recalcStock_();
   return { id: id };
 }
@@ -614,6 +794,12 @@ function nextSimpleId_(prefix, rows, col) {
 function serialize_(v) {
   if (v instanceof Date) return v.toISOString();
   return v;
+}
+
+function pick_(obj, keys) {
+  var o = {};
+  keys.forEach(function (k) { o[k] = obj[k]; });
+  return o;
 }
 
 function str_(v) { return v === null || v === undefined ? '' : String(v).trim(); }
