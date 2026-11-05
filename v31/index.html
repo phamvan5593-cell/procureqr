@@ -100,7 +100,7 @@
           </div>
         </div>
         <div class="overflow-x-auto"><table class="tbl"><thead><tr>
-          <th>Mã PR</th><th>Ngày / Người ĐX</th><th>Khách hàng / Máy</th><th>Vật tư</th><th class="text-center">SL / Tồn</th><th>Bảo hành</th><th>Trạng thái</th><th class="text-right">Thao tác</th>
+          <th>Mã PR</th><th>Ngày / Người ĐX</th><th>Khách hàng / Máy</th><th>Vật tư</th><th class="text-center">SL / Tồn</th><th>Bảo hành</th><th class="min-w-[170px]">Trạng thái / Thao tác</th>
         </tr></thead><tbody id="prBody"></tbody></table></div>
       </div>
     </div>
@@ -561,9 +561,8 @@ function renderPR() {
       <td>${esc(r['Tên Vật Tư'])}<div class="text-xs font-mono text-slate-400">${esc(r['Mã Part'])}</div><div class="text-xs text-slate-500 italic">${esc(r['Lý Do'])}</div></td>
       <td class="text-center"><b>${esc(r['Số Lượng'])}</b><div class="text-[11px] ${stock > 0 ? 'text-emerald-700' : 'text-red-600'}">tồn ${stock}</div></td>
       <td class="max-w-[180px]">${warrantyPill(r['Tình Trạng BH'])}<div class="text-[11px] text-slate-500">${esc(r['Chi Tiết BH'])}</div></td>
-      <td>${pill(st)}${appr}${bg}${kq}</td>
-      <td class="text-right">${act}</td></tr>`;
-  }).join('') || '<tr><td colspan="8" class="text-center text-slate-400 py-6">Chưa có phiếu đề xuất</td></tr>';
+      <td>${pill(st)}${appr}${bg}${kq}${act ? `<div class="flex flex-wrap gap-1 mt-2">${act}</div>` : ""}</td></tr>`;
+  }).join('') || '<tr><td colspan="7" class="text-center text-slate-400 py-6">Chưa có phiếu đề xuất</td></tr>';
 }
 async function submitPR(e) {
   e.preventDefault();
