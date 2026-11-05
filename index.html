@@ -376,11 +376,16 @@ function val(id) { return document.getElementById(id).value.trim(); }
 function isStaff() { return !!S.user; }
 function isManager() { return S.user && S.user.role === 'manager'; }
 function items() { return S.data?.items || []; }
-function itemByInput(v) {
+/** Tìm theo mã, "mã — tên", tên đầy đủ, hoặc một phần mã/tên nếu chỉ khớp đúng 1 dòng. */
+function findOne(list, v, codeKey, nameKey) {
   v = String(v || '').trim(); if (!v) return null;
-  const code = v.split(' — ')[0].trim().toUpperCase();
-  return items().find(i => String(i['Mã Part']).toUpperCase() === code) || null;
+  const low = v.toLowerCase(), code = v.split(' — ')[0].trim().toLowerCase();
+  const exact = list.find(x => String(x[codeKey]).toLowerCase() === code || String(x[nameKey]).trim().toLowerCase() === low);
+  if (exact) return exact;
+  const part = list.filter(x => (x[codeKey] + ' ' + x[nameKey]).toLowerCase().includes(low));
+  return part.length === 1 ? part[0] : null;
 }
+function itemByInput(v) { return findOne(items(), v, 'Mã Part', 'Tên Vật Tư'); }
 function stockOf(code) { const s = (S.data?.stock || []).find(r => r['Mã Part'] === code); return s ? Number(s['Tồn Kho']) || 0 : 0; }
 function showItemHint(inputId, hintId) {
   const it = itemByInput(val(inputId)); const h = document.getElementById(hintId);
@@ -466,11 +471,7 @@ function closeModal() { const m = document.getElementById('modal'); m.classList.
 function customers() { return S.data?.customers || []; }
 function machines() { return S.data?.machines || []; }
 function custLabel(c) { return c['Mã KH'] + ' — ' + c['Tên KH']; }
-function customerByInput(v) {
-  v = String(v || '').trim(); if (!v) return null;
-  const code = v.split(' — ')[0].trim().toUpperCase();
-  return customers().find(c => String(c['Mã KH']).toUpperCase() === code || String(c['Tên KH']).toLowerCase() === v.toLowerCase()) || null;
-}
+function customerByInput(v) { return findOne(customers(), v, 'Mã KH', 'Tên KH'); }
 function machineLabel(m) { return m['Tên Máy'] + (m['Model'] ? ' · ' + m['Model'] : '') + (m['Số Serial'] ? ' · S/N ' + m['Số Serial'] : ''); }
 function onCustomerInput(p) {
   const c = customerByInput(val(p + 'Customer'));
@@ -479,7 +480,8 @@ function onCustomerInput(p) {
   sel.innerHTML = (c ? (list.length ? '<option value="">-- Chọn máy --</option>' : '<option value="">(Khách hàng chưa có máy trong danh sách)</option>') : '<option value="">-- Chọn khách hàng trước --</option>')
     + list.map(m => `<option value="${esc(m['Mã Máy'])}" ${m['Mã Máy'] === cur ? 'selected' : ''}>${esc(machineLabel(m))}</option>`).join('')
     + (val(p + 'Customer') ? '<option value="__other">+ Máy khác (tự ghi tên)</option>' : '');
-  if (list.length === 1 && !cur) sel.value = list[0]['Mã Máy'];
+  // Khách chỉ có 1 máy → tự chọn máy đó (trừ khi người dùng đang chọn "máy khác")
+  if (list.length === 1 && cur !== '__other' && !list.some(m => m['Mã Máy'] === cur)) sel.value = list[0]['Mã Máy'];
   onTargetChange(p);
 }
 function getTarget(p) {
