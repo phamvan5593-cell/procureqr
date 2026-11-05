@@ -126,6 +126,10 @@ check('Anh Hoàng duyệt được PR', post('approvePR', { id: newPr.data.id },
 check('Vật tư ngoài danh mục bị chặn', post('savePR', { partNo: 'XYZ', qty: 1, reason: 'x' }, tv).ok === false);
 
 console.log('3) Kho');
+check('Anh Hoàng KHÔNG nhập kho được', post('receiveStock', { items: [{ partNo: 'CC-10A', qty: 1 }] }, th).ok === false);
+check('Anh Hoàng KHÔNG xuất kho được', post('issueStock', { partNo: 'CC-10A', qty: 1, customer: 'A', machine: 'B' }, th).ok === false);
+const rv = post('receiveStock', { items: [{ partNo: 'CC-10A', qty: 1 }], performer: '' }, tv);
+check('Nhập kho ghi Người nhập liệu = người đăng nhập', rv.ok && T('SoKho').find(r => r['Mã Phiếu'] === rv.data.id)['Người Nhập Liệu'] === 'Vân');
 check('Xuất quá tồn bị chặn', post('issueStock', { partNo: 'DC-B52', qty: 99, customer: 'A', machine: 'B' }, tv).ok === false);
 check('Xuất thiếu khách hàng bị chặn', post('issueStock', { partNo: 'CC-10A', qty: 1, machine: 'B' }, tv).ok === false);
 const po2 = T('PO')[1]['Mã PO'];

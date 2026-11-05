@@ -71,6 +71,9 @@ function doPost(e) {
     var handler = ACTIONS[action];
     if (!handler) throw new Error('Lệnh không hợp lệ: ' + action);
     if (!user && handler.role !== 'public') throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    if (handler.role === 'staff' && user.role !== 'staff') {
+      throw new Error('Nhập / xuất kho do ' + USERS.filter(function (u) { return u.role === 'staff'; }).map(function (u) { return u.name; }).join(', ') + ' thực hiện.');
+    }
     if (handler.role === 'manager' && user.role !== 'manager') {
       throw new Error('Chỉ ' + managerNames_() + ' mới có quyền thực hiện thao tác này.');
     }
@@ -108,8 +111,8 @@ var ACTIONS = {
   createPO:      { fn: createPO_ },
   updatePOItem:  { fn: updatePOItem_ },
   setPOStatus:   { fn: setPOStatus_ },
-  receiveStock:  { fn: receiveStock_ },
-  issueStock:    { fn: issueStock_ },
+  receiveStock:  { fn: receiveStock_, role: 'staff' }, // nhập/xuất kho chỉ Vân, Thùy
+  issueStock:    { fn: issueStock_, role: 'staff' },
   saveItem:      { fn: saveItem_ },
   saveSupplier:  { fn: saveSupplier_ },
   saveConfig:    { fn: saveConfig_ },
