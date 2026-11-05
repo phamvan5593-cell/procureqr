@@ -307,7 +307,7 @@ const LS = { get(k) { try { return localStorage.getItem('pq_' + ENV + '_' + k); 
 const TABS = [
   { id: 'pr',  label: '1. Đề xuất (PR)', icon: 'fa-file-pen text-blue-400', pub: true },
   { id: 'po',  label: '2. Đơn mua (PO)', icon: 'fa-cart-shopping text-emerald-400' },
-  { id: 'kho', label: '3. Nhập / Xuất kho', icon: 'fa-dolly text-purple-400' },
+  { id: 'kho', label: '3. Nhập / Xuất kho', icon: 'fa-dolly text-purple-400', staffOnly: true },
   { id: 'ton', label: '4. Tồn kho', icon: 'fa-boxes-stacked text-fuchsia-400', pub: true },
   { id: 'log', label: '5. Tra cứu bảo hành & Sổ kho', icon: 'fa-shield-halved text-cyan-400', pub: true },
   { id: 'vat', label: '6. VAT & Công nợ', icon: 'fa-receipt text-amber-400' },
@@ -422,6 +422,7 @@ function renderTabs() {
 function switchTab(id) {
   const t = TABS.find(x => x.id === id);
   if (t && !t.pub && !isStaff()) { openLogin(); return; }
+  if (t && t.staffOnly && isManager()) { toast('Nhập / xuất kho do Vân, Thùy thực hiện. Anh Hoàng xem phiếu ở tab 5. Sổ kho.', 'err'); if (S.tab !== id) return; id = 'log'; }
   S.tab = id; LS.set('tab', id);
   document.querySelectorAll('.tab-content').forEach(el => el.classList.toggle('active', el.id === 'tab-' + id));
   renderTabs();
@@ -438,7 +439,12 @@ function renderAll() {
   onCustomerInput('pr'); onCustomerInput('out');
   document.getElementById('apiUrlLabel').textContent = ENV.toUpperCase() + ' – ' + API_URL;
   document.getElementById('apiVersion').textContent = S.data.version || '?';
-  if (S.user && !val('prRequester')) document.getElementById('prRequester').value = S.user.name;
+  // Đổi người đăng nhập → các ô người đề xuất / người thực hiện theo người đang đăng nhập
+  const uid = S.user ? S.user.id : '';
+  if (uid !== S.lastUid) {
+    ['prRequester', 'inPerformer', 'outPerformer'].forEach(id => document.getElementById(id).value = S.user ? S.user.name : '');
+    S.lastUid = uid;
+  }
   const tab = TABS.find(t => t.id === S.tab);
   switchTab(tab && (tab.pub || isStaff()) ? S.tab : 'pr');
   renderPR(); renderStock(); renderLog();
@@ -555,7 +561,7 @@ function renderPR() {
     }
     if (isStaff() && st === 'Chờ báo giá KH') act += `<button onclick="quoteSent('${id}')" class="btn bg-amber-500 text-white !py-1">Đã gửi báo giá</button> `;
     if (isStaff() && st === 'Đã gửi báo giá') act += `<button onclick="quoteResult('${id}', true)" class="btn bg-emerald-600 text-white !py-1">KH đồng ý</button> <button onclick="quoteResult('${id}', false)" class="btn bg-red-100 text-red-700 !py-1">KH không đồng ý</button> `;
-    if (isStaff() && st === 'Đã Duyệt' && stock > 0 && r['Loại'] !== 'Mua dự trữ kho') act += `<button onclick="issueFromPR('${id}')" class="btn bg-purple-600 text-white !py-1" title="Kho còn hàng – xuất luôn không cần mua">📤 Xuất kho</button> `;
+    if (isStaff() && !isManager() && st === 'Đã Duyệt' && stock > 0 && r['Loại'] !== 'Mua dự trữ kho') act += `<button onclick="issueFromPR('${id}')" class="btn bg-purple-600 text-white !py-1" title="Kho còn hàng – xuất luôn không cần mua">📤 Xuất kho</button> `;
     if (isStaff() && ['Chờ Duyệt', 'Từ Chối', 'KH không đồng ý'].includes(st)) act += `<button onclick="deletePR('${id}')" class="btn bg-slate-100 !py-1" title="Xóa phiếu"><i class="fa-solid fa-trash"></i></button>`;
     if (!act && st === 'Chờ Duyệt') act = '<span class="text-xs text-slate-400 italic">Chờ quản lý duyệt</span>';
     if (!act && st === 'Chờ báo giá KH') act = '<span class="text-xs text-slate-400 italic">Chờ gửi báo giá</span>';
@@ -679,7 +685,7 @@ function renderPO() {
     // Nút chính của bước hiện tại đứng đầu, nút phụ phía sau
     let act = '';
     if (draft) act += `<button onclick="releasePO('${id}')" class="btn bg-emerald-600 text-white"><i class="fa-solid fa-paper-plane"></i> Phát hành & gửi Zalo</button>`;
-    if (st === 'Đã phát hành' || st === 'Nhận 1 phần') act += ` <button onclick="goReceive('${id}')" class="btn bg-purple-600 text-white">📦 Nhập kho (hàng về)</button>`;
+    if (!isManager() && (st === 'Đã phát hành' || st === 'Nhận 1 phần')) act += ` <button onclick="goReceive('${id}')" class="btn bg-purple-600 text-white">📦 Nhập kho (hàng về)</button>`;
     if (!draft && st !== 'Đã hủy') act += ` <button onclick="openInvoice('${id}')" class="btn ${hasInv ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-amber-500 text-white'}"><i class="fa-solid fa-receipt"></i> ${hasInv ? 'Hóa đơn ' + esc(inv['Số Hóa Đơn']) : 'Nhập hóa đơn VAT'}</button>`;
     if (hasInv && !paid) act += ` <button onclick="togglePaid('${id}', true)" class="btn bg-amber-100 text-amber-800 border border-amber-300">⏳ Đánh dấu đã thanh toán</button>`;
     if (!draft && st !== 'Đã hủy') act += ` <button onclick="copyZalo('${id}')" class="btn bg-emerald-50 text-emerald-800 border border-emerald-200">📲 Gửi lại tin Zalo</button>`;
@@ -749,7 +755,6 @@ function setMode(m) {
   document.getElementById('modeOut').className = 'flex-1 btn justify-center ' + (m === 'out' ? 'bg-amber-600 text-white' : 'bg-slate-200');
   document.getElementById('formIn').classList.toggle('hidden', m !== 'in');
   document.getElementById('formOut').classList.toggle('hidden', m !== 'out');
-  if (S.user) { ['inPerformer', 'outPerformer'].forEach(id => { const el = document.getElementById(id); if (!el.value) el.value = S.user.name; }); }
 }
 function renderInPOSelect() {
   const sel = document.getElementById('inPO'), cur = sel.value;
