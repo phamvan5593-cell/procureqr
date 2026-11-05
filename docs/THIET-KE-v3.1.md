@@ -78,7 +78,24 @@ Ngày: 05/11/2026 · Trạng thái: **NHÁP – chờ A/Vân duyệt trước kh
 3. Đưa `index.html` lên GitHub → GitHub Pages tự cập nhật.
 4. Nếu lỗi: chọn lại phiên bản 7 trong deployment + `git revert` → quay về ngay.
 
-## 6. Câu hỏi cần A/Vân trả lời trước khi code
+## 6. Đã chốt với A (05/11/2026)
+
+| Câu hỏi | Quyết định |
+|---|---|
+| Phạm vi | App cho **SHL**, tồn kho **chỉ của SHL** (1 kho) |
+| QR | **1 mã QR = 1 mã vật tư** (dán lên ngăn/hộp vật tư, không phải từng cái) |
+| PR | Mỗi PR 1 món *(giả định – chờ xác nhận)* |
+| PO | **1 PO gồm nhiều món của cùng 1 NCC** (gộp nhiều PR đã duyệt) |
+| Duyệt PO | **Không cần duyệt** |
+| Người dùng | **Vân, Thùy**: thao tác (PR, PO, nhập/xuất, VAT) · **Anh Hoàng**: quản lý, **duyệt PR** · Các anh khác: **chỉ xem** PR và tồn kho |
+| Thông tin công ty | Có màn hình **Cấu hình** để tự điền (lấy lại từ commit 7d28031, lưu Sheet) |
+| Dữ liệu | Xoá dữ liệu test cũ; E **tự tạo bộ dữ liệu mẫu** để bàn giao |
+
+→ Bảng PO đổi thành 2 tab: **PO** (Mã PO · Ngày Tạo · Nhà Cung Cấp · Tổng Tiền · Trạng Thái · Ghi Chú) và **PO_ChiTiet** (Mã PO · Mã PR · Mã Part · Tên Vật Tư · SL Đặt · Đơn Giá VAT · Thành Tiền · SL Đã Nhận).
+
+→ Đăng nhập: Vân / Thùy / Hoàng mỗi người 1 mã PIN (lưu ở Apps Script, không nằm trong code web). Không đăng nhập = chế độ xem.
+
+## 7. Câu hỏi ban đầu (đã trả lời ở mục 6)
 
 1. **1 PR có nhiều món không?** (VD: 1 phiếu xin 3 linh kiện) Hay mỗi PR đúng 1 món như hiện tại?
 2. **1 PO có gộp nhiều PR/nhiều món cùng 1 NCC không?** Hay giữ 1 PR = 1 PO?
